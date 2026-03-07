@@ -59,6 +59,7 @@ from pyhqiv.constants import (
     OMEGA_TRUE_K_PAPER,
     T_CMB_K,
     T_LOCK_GEV,
+    T_LOCK_NOW_GEV,
     T_PL_GEV,
 )
 from pyhqiv.cosmology import HQIVCosmology, HQIVUniverseEvolver
@@ -71,10 +72,10 @@ from pyhqiv.export import (
 )
 from pyhqiv.fields import PhaseHorizonFDTD
 from pyhqiv.fluid import eddy_viscosity, f_inertia, g_vac_vector, modified_momentum_rhs
-from pyhqiv.lattice import DiscreteNullLattice
+from pyhqiv.lattice import DiscreteNullLattice, omega_k_from_distance
 from pyhqiv.orbit import HQIVOrbit, parker_perihelion_lapse
 from pyhqiv.perturbations import HQIVPerturbations, PerturbationMode
-from pyhqiv.phase import HQIVPhaseLift
+from pyhqiv.phase import HQIVPhaseLift, default_phase_lift
 from pyhqiv.protocols import (
     NullLatticeBase,
     NullLatticeProtocol,
@@ -82,20 +83,31 @@ from pyhqiv.protocols import (
     PhaseLiftProtocol,
 )
 from pyhqiv.redshift import HQIVRedshift, z_expansion_from_scale_factor, z_total_apparent
+from pyhqiv.utils import theta_ref_ang_from_curvature
 from pyhqiv.polarization import RedshiftDecomposition, decompose_redshift
 from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
 from pyhqiv.horizon_network import HorizonNetwork, relax_nucleon_positions, relax_quark_positions
 from pyhqiv.subatomic import (
     color_singlet_projector,
+    confined_effective_theta_m,
+    confined_energy_mev,
+    confined_pdg_energy_mev,
     make_proton_from_quark_states,
+    nucleon_charge_unwrapped_folded_measures,
     nucleon_effective_theta_m,
+    nucleon_effective_theta_m_for_flavor,
+    nucleon_energy_mev,
     nucleon_energies_mev,
     neutron_effective_theta_m,
     neutron_energy_mev,
     proton_effective_theta_m,
     proton_energy_mev,
     quark_binding_angles,
+    quark_flavors_from_flavor_content,
     quark_state_matrix,
+    quark_state_matrices_for_flavor,
+    SUBATOMIC_PDG_MEV,
+    t_qcd_gev_at_epoch,
 )
 from pyhqiv.nuclear import (
     Nuclide,
@@ -142,6 +154,7 @@ __all__ = [
     "molecular",
     "T_PL_GEV",
     "T_LOCK_GEV",
+    "T_LOCK_NOW_GEV",
     "T_CMB_K",
     "M_TRANS",
     "COMBINATORIAL_INVARIANT",
@@ -151,11 +164,13 @@ __all__ = [
     "AGE_APPARENT_GYR_PAPER",
     "OctonionHQIVAlgebra",
     "DiscreteNullLattice",
+    "omega_k_from_distance",
     "HQIVCosmology",
     "HQIVUniverseEvolver",
     "get_bulk_seed",
     "BULK_SEED_AVAILABLE",
     "HQIVPhaseLift",
+    "default_phase_lift",
     "HQIVAtom",
     "HQIVSystem",
     "PhaseHorizonFDTD",
@@ -205,12 +220,22 @@ __all__ = [
     "merge_constituents",
     "color_singlet_projector",
     "make_proton_from_quark_states",
+    "SUBATOMIC_PDG_MEV",
+    "confined_effective_theta_m",
+    "confined_energy_mev",
+    "confined_pdg_energy_mev",
+    "nucleon_charge_unwrapped_folded_measures",
+    "nucleon_energy_mev",
+    "nucleon_effective_theta_m_for_flavor",
     "proton_energy_mev",
     "neutron_energy_mev",
+    "nucleon_energies_mev",
+    "quark_flavors_from_flavor_content",
+    "quark_state_matrices_for_flavor",
     "proton_effective_theta_m",
     "neutron_effective_theta_m",
-    "nucleon_energies_mev",
     "nucleon_effective_theta_m",
+    "t_qcd_gev_at_epoch",
     "quark_binding_angles",
     "quark_state_matrix",
     "Nuclide",
@@ -234,6 +259,7 @@ __all__ = [
     "hqiv_answer_thermo",
     "phi_from_rho_T",
     "theta_local_from_density",
+    "theta_ref_ang_from_curvature",
     "shell_fraction_energy_shift",
     "lapse_compression_thermo",
     "thermo_fluid_lapse",

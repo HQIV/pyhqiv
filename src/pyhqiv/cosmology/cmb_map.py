@@ -1,7 +1,7 @@
 """
 Axiom-pure CMB pipeline: T_Pl → now using only unit conversions + lattice.
 
-Respects Ω_k^true = +0.0098 in observables: curved χ(z), curved_line_of_sight,
+Uses dynamic Ω_k^true from lattice (paper Sec. curvature) in observables: curved χ(z), curved_line_of_sight,
 curvature-aware transfer, ISW from peculiar velocity, growth_to_sigma8.
 """
 
@@ -19,7 +19,7 @@ from pyhqiv.perturbations import HQIVPerturbations
 
 class HQIVCMBMap:
     """
-    T_Pl → now full pipeline that respects Ω_k^true = +0.0098 in observables.
+    T_Pl → now full pipeline with dynamic Ω_k^true in observables.
 
     Curved-sky projection (curved_line_of_sight), curvature in transfer and σ₈,
     ISW from accelerated galaxy motion. Only unit conversions + lattice.
@@ -137,7 +137,7 @@ class HQIVCMBMap:
         )
         plt.xlabel("Multipole ℓ")
         plt.ylabel(r"$\ell(\ell+1)C_\ell / 2\pi$ [μK²]")
-        plt.title("HQIV CMB Multipole — Respecting Ω_k^true = +0.0098")
+        plt.title("HQIV CMB Multipole — Dynamic Ω_k^true")
         plt.legend()
         plt.grid(True, which="both", ls="--")
         if out_path:

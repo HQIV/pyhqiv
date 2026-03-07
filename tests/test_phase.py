@@ -7,6 +7,7 @@ from pyhqiv.phase import (
     HQIVPhaseLift,
     adm_lapse_compression_factor,
     apparent_age_from_wall_clock,
+    default_phase_lift,
     delta_theta_prime,
     delta_theta_prime_dot_homogeneous,
 )
@@ -50,3 +51,18 @@ def test_phase_lift_delta_theta_prime():
 def test_phase_lift_dot_homogeneous():
     pl = HQIVPhaseLift()
     assert pl.delta_theta_prime_dot(H_homogeneous=1e-18) == 1e-18
+
+
+def test_phase_lift_omega_k_and_curvature_factor():
+    """Phase lift owns Ω_k so curvature is universal (O-lifted Maxwell layer)."""
+    pl = HQIVPhaseLift()
+    assert hasattr(pl, "omega_k")
+    assert pl.omega_k > 0
+    assert abs(pl.curvature_factor() - (1.0 + pl.omega_k)) < 1e-10
+
+
+def test_default_phase_lift_singleton():
+    """default_phase_lift() returns cached lift for universal curvature."""
+    p1 = default_phase_lift()
+    p2 = default_phase_lift()
+    assert p1 is p2

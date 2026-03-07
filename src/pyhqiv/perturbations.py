@@ -328,7 +328,7 @@ class HQIVPerturbations:
         f_lapse = 1.0 / (1.0 + np.asarray(delta_E).ravel() / (mean_delta_E * 2.0))
         f_lapse = np.clip(f_lapse, 0.2, 1.0)
 
-        # Curvature correction for Ω_k = +0.0098
+        # Curvature correction (Ω_k from background.Ok0 when available, else paper reference)
         if omega_k is not None and omega_k > 0:
             T /= np.sqrt(1 + omega_k * k**2) ** 0.5
 

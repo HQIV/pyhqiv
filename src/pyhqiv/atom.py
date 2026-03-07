@@ -4,6 +4,9 @@ HQIV Atom — pure core + friendly public wrapper with bonding angles list.
 Pure HQIVAtom: SI units only, mathematical core.
 Public Atom: accepts "C", "Fe3+", "1.54 angstrom", charge="+2", etc.
             → returns list of bonding angles with HQIV energy contribution.
+
+Horizon: Θ_local from local_theta_from_distance; Ω_k at each point from distance via
+omega_k_from_distance(|r|) (lattice equation: distance → shell n → Ω_k(n; N)).
 """
 
 from __future__ import annotations
@@ -25,7 +28,7 @@ ureg.default_format = "~P"
 # Pure first-principles core (internal only)
 # ===================================================================
 class HQIVAtom:
-    """Pure HQIV atom — SI metres, float charge, no strings/parsing."""
+    """Pure HQIV atom — SI metres, float charge. Horizon uses phase-lift curvature (universal)."""
 
     def __init__(
         self,
@@ -58,8 +61,9 @@ class HQIVAtom:
     def add_bond(self, partner_atom_id: Union[str, int], bond_type: str = "covalent") -> None:
         self.bonds.append((partner_atom_id, bond_type))
 
-    def local_theta(self, x: np.ndarray) -> np.ndarray:
-        return local_theta_from_distance(x - self.position)
+    def local_theta(self, x: np.ndarray, scale: float = 1.0) -> np.ndarray:
+        """Θ_local from distance; curvature from phase lift (universal)."""
+        return local_theta_from_distance(x - self.position, scale=scale)
 
     def phi_local(self, x: np.ndarray) -> np.ndarray:
         return phi_from_theta_local(self.local_theta(x), c=self.c_si)
@@ -86,6 +90,7 @@ class Atom:
     """
     User-friendly HQIV atom with natural input and bonding angles list.
     When you add a bond during folding, angles update automatically and energy is accounted for.
+    Curvature (Ω_k) is applied universally via the phase lift (pyhqiv.phase).
     """
 
     def __init__(
@@ -112,7 +117,7 @@ class Atom:
 
         self.charge = self._parse_charge(charge)
 
-        # Pure internal core
+        # Pure internal core (curvature from phase lift in utils.local_theta_from_distance)
         self._core = HQIVAtom(
             position=self.position,
             charge=self.charge,

@@ -25,12 +25,13 @@ C_H0_MPC = 299792.458 / H0_KM_S_MPC_PAPER
 
 class HQIVCosmology:
     """
-    HQIV cosmology from the discrete null lattice: true curvature Ω_k,
-    wall-clock and apparent ages, and lapse compression.
+    HQIV cosmology from the discrete null lattice: true curvature Ω_k
+    (dynamic output of shell integral, paper Sec. curvature), wall-clock
+    and apparent ages, and lapse compression.
 
     Single call to evolve_to_cmb(T0_K) returns paper fiducials:
-    Omega_true_k ≈ 0.0098, age_wall_Gyr = 51.2, age_apparent_Gyr = 13.8,
-    lapse_compression ≈ 3.96.
+    Omega_true_k from lattice.omega_k_true() (≈ 0.0098 at m_trans=500),
+    age_wall_Gyr = 51.2, age_apparent_Gyr = 13.8, lapse_compression ≈ 3.96.
     """
 
     def __init__(
@@ -64,12 +65,12 @@ class HQIVCosmology:
         return self._lattice.evolve_to_cmb(T0_K=T0_K, E_0_factor=E_0_factor, use_jax=use_jax)
 
     def omega_k_true(self, E_0_factor: float = 1.0, use_jax: bool = False) -> float:
-        """True curvature from shell integral (paper ≈ +0.0098)."""
+        """True curvature from shell integral (dynamic; paper Sec. curvature; ≈ +0.0098 at fiducial m_trans)."""
         return self._lattice.omega_k_true(E_0_factor=E_0_factor, use_jax=use_jax)
 
     @property
     def Ok0(self) -> float:
-        """Ω_k^true from lattice (paper ≈ +0.0098). Alias for observable pipeline."""
+        """Ω_k^true from lattice (dynamic output of shell integral). Alias for observable pipeline."""
         return self.omega_k_true()
 
     def get_delta_E_grid(self, E_0_factor: float = 1.0) -> np.ndarray:

@@ -1,9 +1,10 @@
 """
 Discrete null lattice: combinatorial evolution m=0..m_trans, δE(m), T(m),
-Ω_k from shell integral, evolve_to_cmb(T0). Paper Sec. 3, curvature imprint.
+Ω_k from shell integral, evolve_to_cmb(T0). Paper Sec. curvature (first-principles).
 
-Ω_k is dynamic (HQIV_LEAN): Ω_k(n; N) = Ω_k_true · (∫₀ⁿ shape / ∫₀ᴺ shape).
-At the chosen horizon (n = N) we get Ω_k(N; N) = Ω_k_true. Not a constant.
+Ω_k is a dynamic output of the shell integral (paper: Ω_k^true = omega_k_from_shell_integral;
+no external amplitude). Ω_k(n; N) = Ω_k_true · (∫₀ⁿ shape / ∫₀ᴺ shape) · (x/θ); at horizon
+n = N we get Ω_k(N; N) = Ω_k_true. Use omega_k_true() / omega_k_at_horizon for dynamic values.
 """
 
 from __future__ import annotations
@@ -125,6 +126,38 @@ def horizon_planck_distances_m(n: int, N: int) -> tuple[float, float]:
     )
 
 
+def omega_k_from_distance(
+    distance_m: float,
+    reference_m_trans: int = M_TRANS,
+    T_Pl: float = T_PL_GEV,
+    alpha: float = ALPHA,
+    E_0_factor: float = 1.0,
+    omega_k_true: float = OMEGA_TRUE_K_PAPER,
+    use_jax: bool = False,
+    use_planck_distance_ratio: bool = True,
+) -> float:
+    """
+    Ω_k at the given distance (metres). Same equation as omega_k_at_horizon: distance
+    maps to shell n via distance = L_P * (n+1) ⇒ n = distance_m / L_P - 1 (paper Sec. curvature).
+    One extra cycle to get curvature at the evaluation scale instead of a constant.
+    """
+    if distance_m <= 0:
+        return 0.0
+    # distance to shell n = L_P * (n+1)  =>  n = distance_m / L_PLANCK_M - 1
+    n_eff = int(round(distance_m / L_PLANCK_M - 1.0))
+    n_eff = max(0, min(n_eff, reference_m_trans))
+    return omega_k_at_horizon(
+        n_eff,
+        reference_m_trans,
+        T_Pl=T_Pl,
+        alpha=alpha,
+        E_0_factor=E_0_factor,
+        omega_k_true=omega_k_true,
+        use_jax=use_jax,
+        use_planck_distance_ratio=use_planck_distance_ratio,
+    )
+
+
 def omega_k_at_horizon(
     n: int,
     N: int,
@@ -136,13 +169,13 @@ def omega_k_at_horizon(
     use_planck_distance_ratio: bool = True,
 ) -> float:
     """
-    Ω_k(n; N): spatial curvature at shell n relative to horizon N (dynamic, not constant).
+    Ω_k(n; N): spatial curvature at shell n relative to horizon N (dynamic output, paper Sec. curvature).
 
     Ω_k(n; N) = Ω_k_true · (∫₀ⁿ shape / ∫₀ᴺ shape) · (x/θ), where the 0 < x < θ term
     is computed from the Planck distances of the two horizons: x/θ = (n+1)/(N+1)
     (distance to shell n is L_P·(n+1), to horizon N is L_P·(N+1)). Set
     use_planck_distance_ratio=False for the integral-only formula (HQIV_LEAN raw).
-    At the horizon (n = N): Ω_k(N; N) = Ω_k_true. Same normalization as η in baryogenesis.
+    At the horizon (n = N): Ω_k(N; N) = Ω_k_true. Paper: Ω_k^true = omega_k_from_shell_integral (no free amplitude).
     """
     integral_N = curvature_integral(N, T_Pl=T_Pl, alpha=alpha, E_0_factor=E_0_factor, use_jax=use_jax)
     if integral_N <= 0:
@@ -165,10 +198,11 @@ def omega_k_from_shell_integral(
     use_planck_distance_ratio: bool = True,
 ) -> float:
     """
-    Ω_k at the transition shell relative to the reference horizon (today’s value).
+    Ω_k at the transition shell (dynamic; paper Sec. curvature).
 
     Ω_k(m_trans; reference_m_trans) = omega_k_reference · (∫₀^{m_trans}/∫₀^{reference}) · (x/θ).
     x/θ from Planck distances of the two horizons. At reference_m_trans we get omega_k_reference.
+    Paper: Ω_k^true = omega_k_from_shell_integral (integral yields curvature; no external amplitude).
     Equivalent to omega_k_at_horizon(m_trans, reference_m_trans).
     """
     return omega_k_at_horizon(
@@ -299,7 +333,7 @@ class DiscreteNullLattice:
         )
 
     def omega_k_true(self, E_0_factor: float = 1.0, use_jax: bool = False) -> float:
-        """Ω_k at the transition shell (today): Ω_k(m_trans; reference). Paper ≈ +0.0098 when m_trans = reference."""
+        """Ω_k at the transition shell (today): dynamic output of shell integral (paper Sec. curvature). ≈ +0.0098 at m_trans = M_TRANS."""
         return omega_k_from_shell_integral(
             m_trans=self.m_trans,
             T_Pl=self.T_Pl_GeV,

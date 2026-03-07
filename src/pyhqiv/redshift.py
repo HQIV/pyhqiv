@@ -184,7 +184,7 @@ class HQIVRedshift:
         )
 
     def cosmology_result(self) -> dict:
-        """If lattice attached, return evolve_to_cmb result; else paper defaults."""
+        """If lattice attached, return evolve_to_cmb result (dynamic Ω_k); else paper reference defaults."""
         if self._lattice is not None:
             return self._lattice.evolve_to_cmb()
         return {

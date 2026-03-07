@@ -1,16 +1,31 @@
 """
 HQIV phase lift: δθ′(E′), ˙δθ′, homogeneous limit ˙δθ′≈H, ADM lapse compression,
 and modified Maxwell lift terms (γ(φ/c²)(˙δθ′/c)). Paper Sec. 2 & 5.
+
+Ω_k (spatial curvature from shell integral, paper Sec. curvature) is owned here so the
+O-lifted Maxwell / phase-horizon layer applies it universally. Use curvature_factor()
+for effective horizon Θ_eff = Θ_local × curvature_factor(); default omega_k from lattice.
 """
 
 from __future__ import annotations
 
 import math
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 
 from pyhqiv.constants import C_SI, GAMMA, LAPSE_COMPRESSION_PAPER
+
+# Cached default phase lift for universal curvature (used by utils, fields, etc.)
+_default_phase_lift: Optional["HQIVPhaseLift"] = None
+
+
+def default_phase_lift() -> "HQIVPhaseLift":
+    """Default phase lift (O-lifted Maxwell layer). Carries dynamic Ω_k; use for universal curvature."""
+    global _default_phase_lift
+    if _default_phase_lift is None:
+        _default_phase_lift = HQIVPhaseLift()
+    return _default_phase_lift
 
 
 def delta_theta_prime(E_prime: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
@@ -53,12 +68,35 @@ def apparent_age_from_wall_clock(
 class HQIVPhaseLift:
     """
     Phase-horizon lift: δθ′(E′), ˙δθ′ = u^μ ∇_μ δθ′, homogeneous ˙δθ′≈H,
-    ADM lapse compression, and modified Maxwell terms.
+    ADM lapse compression, and modified Maxwell terms. Owns Ω_k so curvature
+    is universally applied (same 0 < x < θ as shell integral; paper Sec. curvature).
     """
 
-    def __init__(self, gamma: float = GAMMA, c_si: float = C_SI) -> None:
+    def __init__(
+        self,
+        gamma: float = GAMMA,
+        c_si: float = C_SI,
+        omega_k: Optional[float] = None,
+        lattice: Optional[Any] = None,
+    ) -> None:
         self.gamma = gamma
         self.c_si = c_si
+        if omega_k is not None:
+            self._omega_k = float(omega_k)
+        elif lattice is not None and hasattr(lattice, "omega_k_true"):
+            self._omega_k = float(lattice.omega_k_true())
+        else:
+            from pyhqiv.lattice import DiscreteNullLattice
+            self._omega_k = DiscreteNullLattice().omega_k_true()
+
+    @property
+    def omega_k(self) -> float:
+        """Spatial curvature (dynamic from lattice by default). Same as shell integral."""
+        return self._omega_k
+
+    def curvature_factor(self) -> float:
+        """Factor for effective horizon: Θ_eff = Θ_local × curvature_factor(). Paper: 1 + Ω_k."""
+        return 1.0 + self._omega_k
 
     def delta_theta_prime(self, E_prime: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """δθ′(E′) = arctan(E′)×(π/2)."""

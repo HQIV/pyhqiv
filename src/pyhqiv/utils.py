@@ -35,10 +35,30 @@ def make_grid_3d(
     return mg.reshape(3, -1).T
 
 
-def local_theta_from_distance(r: np.ndarray, scale: float = 1.0) -> np.ndarray:
-    """Θ_local ∝ r (or scale); φ = 2c²/Θ_local. Simple radial model."""
+def local_theta_from_distance(
+    r: np.ndarray,
+    scale: float = 1.0,
+    omega_k: Optional[float] = None,
+) -> np.ndarray:
+    """
+    Θ_local ∝ r (or scale); φ = 2c²/Θ_local. Curvature Ω_k from distance via the lattice
+    equation: distance → shell n → omega_k_at_horizon(n, N) (paper Sec. curvature). One extra
+    cycle so Θ_eff = Θ_distance × (1 + omega_k_from_distance(|r|)). Pass omega_k to override with constant.
+    """
     r = np.asarray(r, dtype=float)
-    return np.maximum(np.linalg.norm(r, axis=-1), 1e-30) * scale
+    norm_r = np.maximum(np.linalg.norm(r, axis=-1), 1e-30)
+    theta = norm_r * scale
+    if omega_k is not None:
+        theta = theta * (1.0 + float(omega_k))
+    else:
+        from pyhqiv.lattice import omega_k_from_distance
+        # Ω_k at each distance (same equation as lattice: distance = L_P*(n+1) → n → Ω_k(n;N))
+        if norm_r.ndim == 0:
+            theta = theta * (1.0 + omega_k_from_distance(float(norm_r)))
+        else:
+            ok = np.vectorize(omega_k_from_distance, otypes=[float])(norm_r)
+            theta = theta * (1.0 + ok)
+    return theta
 
 
 def phi_from_theta_local(theta_local: np.ndarray, c: float = 1.0) -> np.ndarray:
@@ -60,9 +80,27 @@ def set_seed(seed: Optional[int] = 42) -> None:
 #
 # Reference length can be derived from local conditions via theta_ref_from_environment
 # (ρ, T, M → mean interparticle spacing in Å), so coupling length is not fixed 1.53 Å.
+# Optional omega_k (dynamic from lattice.omega_k_true()) scales the reference so the
+# same curvature budget informs atomic/molecular horizon scales (paper Sec. curvature).
 
 # Metres to Å for environment-derived Θ
 _M_TO_ANG: float = 1e10
+
+
+def theta_ref_ang_from_curvature(
+    omega_k: float,
+    base_ref_ang: float = 1.53,
+    scale: float = 1.0,
+) -> float:
+    """
+    Curvature-consistent reference horizon length (Å) for atomic/molecular Θ.
+
+    Same dynamic Ω_k from the shell integral (paper Sec. curvature) can scale the
+    reference so the horizon-distance term is consistent with the global curvature.
+    Returns base_ref_ang * (1 + scale * omega_k); default scale=1 gives ~1.53 at
+    omega_k ≈ 0.0098. Pass lattice.omega_k_true() for dynamic curvature.
+    """
+    return base_ref_ang * (1.0 + scale * float(omega_k))
 
 
 def theta_ref_from_environment(
@@ -113,6 +151,7 @@ def theta_local(
     theta_ref_ang: float = 1.53,
     mass_amu: Optional[float] = None,
     mass_ref_amu: float = 12.0,
+    omega_k: Optional[float] = None,
 ) -> float:
     """
     Diamond size Θ_local (Å) at a lattice node from nuclear charge and monogamy.
@@ -120,6 +159,8 @@ def theta_local(
     Θ = theta_ref * (6^alpha * 2^(1/3)) * Z^{-alpha} / coordination^{1/3}.
     If mass_amu is given, Θ is scaled by (mass_amu / mass_ref_amu)^{1/3} so that
     heavier isotopes (e.g. C14) get a larger Θ and fold differently than C12.
+    If omega_k is given (e.g. lattice.omega_k_true()), theta_ref is made
+    curvature-consistent with the dynamic shell-integral Ω_k (paper Sec. curvature).
 
     Parameters
     ----------
@@ -136,12 +177,17 @@ def theta_local(
         Mass in amu (e.g. 14 for C14). If given, isotope-dependent Θ.
     mass_ref_amu : float
         Reference mass for scaling (default 12 for carbon). Used when mass_amu is set.
+    omega_k : float, optional
+        Dynamic curvature from lattice.omega_k_true(); when set, scales theta_ref for
+        curvature-consistent horizon (same Ω_k as cosmology).
 
     Returns
     -------
     float
         Θ in Å.
     """
+    if omega_k is not None:
+        theta_ref_ang = theta_ref_ang_from_curvature(omega_k, base_ref_ang=theta_ref_ang)
     z = max(1, int(z_shell))
     coord = max(1, int(coordination))
     norm = (6.0**alpha) * (2.0 ** (1.0 / 3.0))
@@ -157,13 +203,15 @@ def theta_for_atom(
     alpha: float = 0.91,
     theta_ref_ang: float = 1.53,
     mass_amu: Optional[float] = None,
+    omega_k: Optional[float] = None,
 ) -> float:
     """
     Θ_local (Å) for an element by symbol. Uses Z map: H=1, C=6, N=7, O=8, S=16, P=15, Fe=26.
 
     Optional mass_amu (e.g. 14 for C14-alpha) makes Θ isotope-dependent so that
     C14-alpha folds differently than C12-alpha (heavier → larger Θ → different
-    bond length and torsion landscape).
+    bond length and torsion landscape). Optional omega_k (e.g. lattice.omega_k_true())
+    makes the reference horizon curvature-consistent with the dynamic Ω_k (paper Sec. curvature).
 
     Parameters
     ----------
@@ -175,6 +223,8 @@ def theta_for_atom(
         As in theta_local().
     mass_amu : float, optional
         Mass in amu (e.g. 14 for C14). If None, uses default for symbol (e.g. 12 for C).
+    omega_k : float, optional
+        Dynamic curvature from lattice.omega_k_true(); when set, reference is curvature-consistent.
 
     Returns
     -------
@@ -191,6 +241,7 @@ def theta_for_atom(
         theta_ref_ang=theta_ref_ang,
         mass_amu=mass_amu,
         mass_ref_amu=mass_ref,
+        omega_k=omega_k,
     )
 
 

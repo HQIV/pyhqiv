@@ -7,8 +7,8 @@ HQIV CMB: full T_Pl → now pipeline in one place.
 
 Modules
 -------
-- **HQIVCMBMap**: Axiom-pure orchestrator; respects Ω_k^true = +0.0098 (curved LOS, ISW,
-  growth_to_sigma8). Produces full-sky map (μK), C_ℓ, σ₈.
+- **HQIVCMBMap**: Axiom-pure orchestrator; uses dynamic Ω_k^true from lattice (paper Sec. curvature;
+  curved LOS, ISW, growth_to_sigma8). Produces full-sky map (μK), C_ℓ, σ₈.
 - **run_hqiv_cmb_to_map**: Thin wrapper over cosmology_full (phenomenological).
 
 Bulk first step (T_pk/n / low monopole)
@@ -17,9 +17,9 @@ The very first step of bulk.py (Phase 1: baryogenesis → lock-in) produces η a
 from the curvature imprint δE(m). The paper's single normalisation A ≈ 0.0098 sets both
 η and the low-energy scale. The CMB low monopole / low-ℓ (Sachs–Wolfe) amplitude is
 supposed to come from that same step. When you pass bulk_seed to run_from_T_Pl_to_now(),
-we use Ω_k and lapse from bulk and scale the primordial power by (Ω_k / 0.0098) so the
-low-ℓ amplitude is tied to the bulk first step; without bulk_seed the pipeline uses the
-in-package lattice only (no explicit T_pk/n step).
+we use Ω_k and lapse from bulk and scale the primordial power by (Ω_k / OMEGA_TRUE_K_PAPER) so the
+low-ℓ amplitude is tied to the bulk first step; without bulk_seed the pipeline uses
+dynamic Ω_k from the in-package lattice (omega_k_true()).
 
 Why CLASS-HQIV gets peaks and we didn't (before the fix)
 -------------------------------------------------------

@@ -55,18 +55,15 @@ So for **B = E_free − E_bound** to be positive (bound state lower in energy), 
 
 ## 3. Free-nucleon and bound horizons (first principles only)
 
-No new fitted constants. Layer 0 is now **charge-driven**: the hypercharge block in the octonion algebra assigns fractional charges \(Q_u = +2/3\), \(Q_d = -1/3\). Three quark spheres (radii \(r_q \propto \hbar c/(m_q c^2)\)) must touch (monogamy) while minimising electrostatic energy
-\[
-E_{\rm Coul} = \frac{1}{4\pi\epsilon_0} \sum_{i<j} \frac{Q_i Q_j}{d_{ij}}, \qquad d_{ij} = r_i + r_j.
-\]
-The same three-force algorithm as the nuclear layer is used: hard-sphere repulsion, soft attraction to touching, and Coulomb between all pairs \(\propto Q_i Q_j/d^2\). Equilibrium gives **binding angles** (VSEPR-like): proton (uud) has u-u repulsion → larger u-u angle (~109° tetrahedral preference); neutron (udd) has d-d attraction → more acute d-d angle.
+**Design principle:** The total energy state of any system lives in its **8×8 matrix**. There is no separate “Coulomb force” or “Coulomb energy” added on top; what we classically call Coulomb (repulsion/attraction between charges) is encoded in that state—e.g. in the hypercharge block, trace invariants, or eigenvalues of the composite. So **E_free** and all geometry (quark stand-off, binding angles) must come from the 8×8 and the axiom alone.
 
-- **Θ_free** from the composite \(\mu = \sum r_i / \sqrt{\sum r_i^2}\) (radii only): \(\Theta_{\rm free} = L\times 8\times \mu\). So **proton has larger free horizon** than neutron (\(\mu_{uud} > \mu_{udd}\) when \(r_u > r_d\)).
-- **E_free** = tension + Coulomb: \(E = \hbar c/\Theta + E_{\rm Coul}\). Neutron ends up **heavier** (\(E_n > E_p\)) because \(E_{\rm Coul}\) differs (u-u repulsion vs d-d attraction).
+**Current code (to be replaced):** Layer 0 still uses a **charge-driven** placeholder: explicit Coulomb term \(E_{\rm Coul}\) and force-based relaxation with \(Q_u = +2/3\), \(Q_d = -1/3\). That gives Θ from \(\mu = \sum r_i/\sqrt{\sum r_i^2}\), \(E = \hbar c/\Theta + E_{\rm Coul}\), and `relax_quark_positions(radii, charges)` for angles. This is **temporary**; the target is below.
 
-API: `quark_binding_angles("uud")` / `("udd")` return the three bond angles (rad); `relax_quark_positions(radii, charges)` in `horizon_network` does the relaxation. The 8×8 merge (color singlet) still encodes the same valence; the geometry alone sets Θ and E at layer 0.
+**Target (8×8 only, PDE for geometry):**
+- **Energy:** Read total energy from the 8×8 composite only: \(E = \hbar c/\Theta_{\rm eff}\) (or integral of axiom density), with \(\Theta_{\rm eff}\) from an invariant of the merged state (e.g. effective_modes = 8 + trace(M@Δ)). No \(E_{\rm Coul}\) term; the algebraic part of the state already contains what we call EM/color effects.
+- **Geometry (quark stand-off, equilibrium positions):** Do **not** use force-based relaxation. Instead, define the **energy well** from the axiom and the 8×8 field, then use **PDEs** to find the configuration that minimizes total energy or satisfies the Euler–Lagrange equations. E.g. \(E_{\rm tot} = \int \bigl( \rho c^2 + \hbar c/\Delta x(x) \bigr) d^3x\) with \(\Delta x(x) \leq \Theta_{\rm local}(x)\), where \(\Theta_{\rm local}\) is determined by the local 8×8 state; the minimum (or the solution of the resulting PDE) gives equilibrium distances and angles. See §6.1 and §6.5.1.
 
-At the nuclear layer, **free** proton/neutron Θ and E come from `proton_effective_theta_m()`, `neutron_effective_theta_m()`, `proton_energy_mev()`, `neutron_energy_mev()`. **Bound** Θ and **B** come from `HorizonNetwork`: `E_free = sum(single-nucleon network energies)`, `E_bound = one network of P+N`, `B = E_free − E_bound`.
+At the nuclear layer, **free** proton/neutron Θ and E come from the 8×8 merge of three quarks (no separate Coulomb). **Bound** Θ and **B** come from `HorizonNetwork` or from the same matrix composition at nuclear scale.
 
 ---
 
@@ -131,19 +128,21 @@ Layer-0 quark touching can use the same minimizer with quark radii and charges t
 
 ---
 
-## 6.1 Full matrix and color vs Coulomb (not yet used)
+## 6.1 Full matrix: single source of energy (no separate Coulomb)
 
-**Current code does *not* use:**
+**Principle:** The total energy state of any system lives in its **8×8 matrix**. There is no separate “Coulomb force” or “Coulomb energy” in the theory; what we classically call Coulomb (repulsion/attraction) is **part of** that state—encoded in the algebra (hypercharge block, trace(M@Δ), eigenvalues). So all energy, including what we label EM-like effects, is read off from the 8×8 and the axiom.
 
-- A **full matrix of all energy states** (e.g. the 8×8 / so(8) structure from `pyhqiv.algebra.OctonionHQIVAlgebra`).
-- **Color force *against* Coulomb force** as two competing terms. At the sub-nucleon scale the strong (color) force binds constituents while the EM (Coulomb) force repels; the bound state is the balance of both.
+**Current code (to be replaced):**
+- A **full matrix** of energy states exists (8×8, algebra), but layer 0 still adds an explicit **E_Coul** term and uses **force-based** relaxation with charges. That is a placeholder.
+- **Intended:** No Coulomb force. Energy = ħc/Θ_eff with Θ_eff from the composite 8×8 invariant only. Geometry (quark stand-off, binding angles) from **PDEs for the energy well** (§6.5.1), not from F = k Q_i Q_j/d².
 
 **What exists:**
+- **Subatomic (layer 0):** Placeholder: `relax_quark_positions(radii, charges)`, \(E = \hbar c/\Theta + E_{\rm Coul}\). Target: remove E_Coul; Θ and E from 8×8 merge only; geometry from PDE minimization.
+- **algebra.py:** 8×8, SU(3)_c, U(1)_Y (hypercharge). The hypercharge block is the algebraic origin of “charge”; the **same** matrix determines confinement and what we call Coulomb—one state, one energy.
 
-- **Subatomic (layer 0):** Charge-driven geometry: `relax_quark_positions(radii, charges)` with \(Q_u = +2/3\), \(Q_d = -1/3\); binding angles from equilibrium; \(\Theta = L\times 8\times \mu\), \(E = \hbar c/\Theta + E_{\rm Coul}\). Color (g₂) in the 8×8 merge; Coulomb sets the angles. No matrix invariants needed for Θ or E.
-- **algebra.py:** 8×8 matrices, SU(3)_c, U(1)_Y (hypercharge) — fractional charges are the geometric shadow of the hypercharge block; the same relaxation machinery applies at nucleon and nuclear layers.
+**Intended direction:** Use the **full state matrix** as the single source. Effective Θ (and thus E) from invariants of the merged 8×8 (e.g. 8 + trace(M@Δ)). Quark equilibrium geometry (stand-off distance, angles) from solving the **PDEs** that define the energy well (minimize \(E_{\rm tot} = \int (\rho c^2 + \hbar c/\Delta x) d^3x\) over the field/configuration, or equivalent Euler–Lagrange).
 
-**Intended direction:** Sub-nucleon (and optionally nuclear) binding should use the **full state matrix** (algebra / HQVM) with **color (confinement) and Coulomb (repulsion)** both entering, so the eigenvalues or effective Θ come from diagonalizing that competition, not from a single 8 − Coulomb_reduction.
+**Parameter-free masses at "now":** Apply the QCD scale to the **whole Fano plane at "now"** to get parameter-free energies/masses. **Important:** \(T_{\rm lock}\) in the **cosmology** section is the lock-in *epoch* value (baryogenesis); the scale **at "now"** can be different when the lattice/paper defines a QCD temperature at the today hypersurface. The nucleon mass scale is \(E_{\rm scale} = T_{\rm QCD\,now} \times 1000/\sqrt{3}\) (MeV), with \(\sqrt{3}\) from \(6^7\sqrt{3}\) (Fano). Default uses **T_lock at "now"** (T_LOCK_NOW_GEV). Use **epoch API** to study other times: `epoch="now"` (default), `"lock"` or `"baryogenesis"`, or `epoch=5.0` (age in Gyr). **API:** `t_qcd_gev_at_epoch(epoch)`, `proton_energy_mev(..., epoch="now")`, `neutron_energy_mev(..., epoch=...)`, `T_LOCK_NOW_GEV`, `T_LOCK_GEV` in `pyhqiv.subatomic` / `pyhqiv.constants`.
 
 ### 6.2 What the ladder now shows for neutron, tritium, and He-4
 
@@ -226,15 +225,25 @@ One process, all scales: **`merge_constituents(constituents, project_singlet=...
 - **Ladder:** All layers use **`merge_constituents`**; subatomic (quarks→nucleon), nuclear (nucleons→nucleus), molecular (atoms→molecule) and beyond share one merge. Effective Θ from composite invariant or from **effective_horizon_from_energy_mev(E_tot)** when E_tot comes from integrals.
 - **Integration:** `HQIVSystem(..., energy_field=field)` uses `field.project_scalar_phi()` in the constitutive relation; lattice/thermo/fluid can replace scalar δE with `field.energy_density(...)` and use `field.coherence()` for superfluid.
 
+### 6.5.1 PDE-based energy well for geometry (target)
+
+**No force-based relaxation.** The equilibrium geometry (quark stand-off distance, binding angles, nucleon positions) should **not** come from ad hoc forces (hard-sphere, soft attraction, Coulomb). It should come from the **energy well** defined by the axiom and the 8×8 state, via **PDEs**.
+
+- **Energy functional:** \(E_{\rm tot}[\rho, \Delta x, M] = \int \bigl( \rho(x) c^2 + \hbar c/\Delta x(x) \bigr) d^3x\) with \(\Delta x(x) \leq \Theta_{\rm local}(x)\), and \(\Theta_{\rm local}(x)\) determined by the **local 8×8 state** (e.g. from merge of constituents at that point, or from a field \(M(x)\)). The algebraic part (trace(M@Δ)) is inside the same density; no separate Coulomb term.
+- **Well:** The equilibrium configuration (positions, distances) is the one that **minimizes** \(E_{\rm tot}\) subject to the constraint that \(\Delta x\) is set by the geometry (e.g. nearest-neighbour distance at each point), or that satisfies the **Euler–Lagrange** equations derived from this functional. That yields PDEs for the field (e.g. φ or Θ) and, for discrete constituents, the stand-off distances and angles that minimize total energy.
+- **Quark geometry:** For three quarks, the “well” is the minimum of total energy (from the 8×8 merge and the axiom) over the configuration (positions or distances); the PDE/variational formulation replaces `relax_quark_positions(radii, charges)`. Same idea at nuclear scale: equilibrium nucleon positions from minimizing the same energy functional over the P+N configuration, with Θ from the composite 8×8.
+
+**Implementation direction:** Add a variational/PDE layer: define \(E_{\rm tot}\) from `HQIVEnergyField.energy_density` (and merge_constituents) over the domain; minimize over configuration, or solve the PDE that arises from \(\delta E_{\rm tot} = 0\). The resulting equilibrium distances and angles are the first-principles geometry—no Coulomb force constant, no relaxation scale.
+
 ---
 
 ## 7. How to implement the hierarchy (sketch)
 
 - **Layer 0 (sub-nucleon)**  
-  Valence content \(uud\) / \(udd\); fractional charges \(Q_u = +2/3\), \(Q_d = -1/3\) from hypercharge.  
-  **Relax** three quark spheres with hard-sphere + soft attraction + Coulomb (\(Q_i Q_j/d^2\)).  
-  **Binding angles** from equilibrium positions; \(\Theta_{\rm free} = L\times 8\times \mu\), \(E = \hbar c/\Theta + E_{\rm Coul}\).  
-  Proton has larger Θ; neutron heavier from \(E_{\rm Coul}\). Color (g₂) provides the glue; fractional charge sets the angles.
+  Valence content \(uud\) / \(udd\) in the **8×8 merge**; no separate Coulomb.  
+  **Energy** from composite invariant only: \(\Theta_{\rm eff}\) from 8 + trace(M@Δ) (or equivalent); \(E = \hbar c/\Theta_{\rm eff}\).  
+  **Geometry** (stand-off, binding angles) from **PDE/variational** minimization of \(E_{\rm tot} = \int (\rho c^2 + \hbar c/\Delta x) d^3x\) with Θ_local from the 8×8 state—not from force-based relaxation.  
+  Proton vs neutron mass difference from the different 8×8 composites (uud vs udd), not from an added \(E_{\rm Coul}\).
 
 - **Layer 1 (nucleon)**  
   Use E_proton, E_neutron from layer 0 (or, until layer 0 exists, keep Θ_free_p, Θ_free_n from constants as the effective nucleon horizons).  

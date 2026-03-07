@@ -4,12 +4,29 @@ import numpy as np
 import pytest
 
 from pyhqiv.constants import ALPHA, T_PL_GEV
+from pyhqiv.constants import L_PLANCK_M, M_TRANS
 from pyhqiv.lattice import (
     DiscreteNullLattice,
     curvature_imprint_delta_E,
     discrete_mode_count,
+    omega_k_at_horizon,
+    omega_k_from_distance,
     omega_k_from_shell_integral,
 )
+
+
+def test_omega_k_from_distance_matches_horizon():
+    """omega_k_from_distance(d) uses same equation as omega_k_at_horizon: d = L_P*(n+1)."""
+    # At reference horizon distance d_N = L_P*(M_TRANS+1), should get ~0.0098
+    d_ref = L_PLANCK_M * (M_TRANS + 1)
+    ok_ref = omega_k_from_distance(d_ref)
+    assert abs(ok_ref - 0.0098) < 1e-4
+    # At shell n=100, distance = L_P*(101); should match omega_k_at_horizon(100, M_TRANS)
+    n, N = 100, M_TRANS
+    d_n = L_PLANCK_M * (n + 1)
+    ok_d = omega_k_from_distance(d_n, reference_m_trans=N)
+    ok_h = omega_k_at_horizon(n, N)
+    assert abs(ok_d - ok_h) < 1e-10
 
 
 def test_lattice_omega_k_reproducible():

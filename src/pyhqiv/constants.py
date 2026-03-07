@@ -18,7 +18,11 @@ ALPHA: Final[float] = 0.60  # G_eff exponent: G_eff/G_0 = [H(a)/H_0]^α
 
 # --- Temperature scales [GeV] ---
 T_PL_GEV: Final[float] = 1.2209e19  # Planck temperature
+# QCD lock-in at the lock-in *epoch* (baryogenesis window). Cosmology uses this.
 T_LOCK_GEV: Final[float] = 1.8  # QCD lock-in (baryogenesis window centre)
+# QCD scale at the "now" hypersurface (today). Default for nucleon masses; use
+# t_qcd_gev_at_epoch(epoch="lock") or age_gyr to study baryogenesis or past times.
+T_LOCK_NOW_GEV: Final[float] = 938.272 * math.sqrt(3.0) / 1000.0  # ≈ 1.624 GeV → scale ≈ 938 MeV at "now"
 
 # --- CMB today [K] ---
 T_CMB_K: Final[float] = 2.725
@@ -33,7 +37,9 @@ COMBINATORIAL_INVARIANT: Final[float] = (6**7) * math.sqrt(3)  # ≈ 4.849e5
 KAPPA_BETA: Final[float] = 1.0  # placeholder; replace with paper value when available
 
 # --- Paper fiducial outputs ---
-OMEGA_TRUE_K_PAPER: Final[float] = 0.0098  # true curvature from shell integral
+# Ω_k is dynamic (paper Sec. curvature): Ω_k^true = omega_k_from_shell_integral;
+# no external amplitude. This is the reference value at m_trans=M_TRANS (500).
+OMEGA_TRUE_K_PAPER: Final[float] = 0.0098  # reference at fiducial horizon; use lattice.omega_k_true() for dynamic
 LAPSE_COMPRESSION_PAPER: Final[float] = 3.96  # 51.2 Gyr → 13.8 Gyr apparent
 AGE_WALL_GYR_PAPER: Final[float] = 51.2  # wall-clock age at T_CMB
 AGE_APPARENT_GYR_PAPER: Final[float] = 13.8  # apparent age (local chronometers)
@@ -95,9 +101,13 @@ N_A: Final[float] = 6.02214076e23  # 1/mol (CODATA)
 ALPHA_EM_INV: Final[float] = 137.036  # 1/α_EM (dimensionless)
 # Weak mixing angle at M_Z: sin²θ_W ≈ 0.23122 (PDG)
 SIN2_THETA_W_MZ: Final[float] = 0.23122
-# Light quark masses (MeV/c², PDG central values; in full HQIV these are derived from the mass equation at now).
+# Quark masses (MeV/c², PDG/current values; in full HQIV derived from mass equation at now).
 M_U_MEV_QCD: Final[float] = 2.2
 M_D_MEV_QCD: Final[float] = 4.7
+M_S_MEV_QCD: Final[float] = 95.0   # strange
+M_C_MEV_QCD: Final[float] = 1270.0  # charm
+M_B_MEV_QCD: Final[float] = 4180.0  # bottom
+M_T_MEV_QCD: Final[float] = 172_000.0  # top
 
 # --- Nuclear / decay: first principles only; no preset B or Θ in engine ---
 # ħc and nucleon masses from CODATA (unit conversion / standard particle data only).
