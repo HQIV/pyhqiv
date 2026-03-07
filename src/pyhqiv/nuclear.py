@@ -28,6 +28,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 from pyhqiv.constants import (
+    ALPHA_EM_INV,
     C_SI,
     E_PL_MEV,
     HBAR_C_MEV_FM,
@@ -35,6 +36,7 @@ from pyhqiv.constants import (
     M_D_MEV_QCD,
     M_NEUTRON_MEV,
     M_PROTON_MEV,
+    M_TRANS,
     M_U_MEV_QCD,
 )
 from pyhqiv.fluid import f_inertia
@@ -46,7 +48,25 @@ from pyhqiv.horizon_network import (
 )
 from pyhqiv.subatomic import quark_nodes_for_nucleon
 
-# Element symbol → (P, N_default) for naming and Nuclide parsing only
+# Full periodic table (Z 1–118) for any isotope. Same first-principles binding/half-life/decay for all.
+_ELEMENT_SYMBOLS: Tuple[str, ...] = (
+    "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+    "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
+    "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+    "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr",
+    "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+    "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
+    "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
+    "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+    "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th",
+    "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm",
+    "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
+    "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og",
+)
+ELEMENT_Z_TO_SYMBOL: dict = {z: _ELEMENT_SYMBOLS[z - 1] for z in range(1, 119)}
+ELEMENT_SYMBOL_TO_Z: dict = {s: z for z, s in ELEMENT_Z_TO_SYMBOL.items()}
+
+# Default (P, N) for when mass number not specified (common isotope)
 _ELEMENT_PN: dict = {
     "H": (1, 0), "He": (2, 2), "Li": (3, 4), "Be": (4, 5), "B": (5, 6), "C": (6, 6),
     "N": (7, 7), "O": (8, 8), "F": (9, 10), "Ne": (10, 10), "Na": (11, 12), "Mg": (12, 12),
@@ -54,7 +74,7 @@ _ELEMENT_PN: dict = {
     "Ar": (18, 22), "K": (19, 20), "Ca": (20, 20), "Fe": (26, 30), "Cu": (29, 34),
     "Zn": (30, 34), "U": (92, 146),
 }
-# Long names → symbol for Nuclide identifier parsing (e.g. "carbon-14")
+# Long names → symbol for Nuclide parsing (e.g. "carbon-14")
 _ELEMENT_NAME_TO_SYMBOL: dict = {
     "hydrogen": "H", "helium": "He", "lithium": "Li", "beryllium": "Be", "boron": "B",
     "carbon": "C", "nitrogen": "N", "oxygen": "O", "fluorine": "F", "neon": "Ne",
@@ -65,12 +85,41 @@ _ELEMENT_NAME_TO_SYMBOL: dict = {
 }
 
 
-def nuclide_from_symbol(symbol: str, N: Optional[int] = None) -> Tuple[int, int]:
-    """(P, N) from element symbol. If N given, use (P, N); else use default isotope from table."""
+def nuclide_from_symbol(
+    symbol: str,
+    A: Optional[int] = None,
+    N: Optional[int] = None,
+) -> Tuple[int, int]:
+    """
+    (P, N) from element symbol. Any isotope of any element (Z 1–118).
+
+    Parameters
+    ----------
+    symbol : str
+        Element symbol (e.g. 'C', 'U', 'He').
+    A : int, optional
+        Mass number (P + N). If given, N = A - Z.
+    N : int, optional
+        Neutron number. If given (and A not), use (Z, N).
+    If neither A nor N given, use default isotope from _ELEMENT_PN (or Z, Z for Z≤20).
+
+    Returns
+    -------
+    (P, N) for use with binding_energy_mev, half_life_nuclide_hqiv, decay_chain_nuclide_hqiv.
+    """
     sym = symbol.strip().title()
-    P, N_default = _ELEMENT_PN.get(sym, (0, 0))
-    n = N if N is not None else N_default
-    return (P, n)
+    Z = ELEMENT_SYMBOL_TO_Z.get(sym)
+    if Z is None:
+        P, N_default = _ELEMENT_PN.get(sym, (0, 0))
+        if P == 0:
+            raise ValueError(f"Unknown element symbol {symbol!r}. Use standard IUPAC symbol (H, He, ..., Og).")
+        Z = P
+    N_default = _ELEMENT_PN.get(sym, (Z, Z))[1] if sym in _ELEMENT_PN else Z
+    if A is not None:
+        return (Z, max(0, A - Z))
+    if N is not None:
+        return (Z, N)
+    return (Z, N_default)
 
 
 def _bound_theta_from_matrix_composition(
@@ -162,7 +211,6 @@ def _initial_guess_positions(
     A = len(radii_m)
     if A == 4:
         r_avg = float(np.mean(radii_m))
-        # Min-energy state: edge slightly inside r_eq so graph sees one component (d < r_eq)
         edge_m = R_EQ_SCALE * (2.0 * r_avg) * 0.98
         scale = edge_m / (2.0 * np.sqrt(2.0))
         verts = np.array([
@@ -183,11 +231,11 @@ def minimize_nucleon_configuration(
     initial_guess: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """
-    Find equilibrium positions where repulsion + attraction balance (balanced well).
+    Find equilibrium positions from total energy (same as for quarks: 8×8 + axiom).
 
-    Uses HorizonNetwork.total_energy() as objective; constants A, B, C from algebra
-    and lattice. Returns positions (m) of nucleons. Universally applicable to any
-    number of nucleons; for A=4 seeds tetrahedron at r_eq ~ 1.4 fm.
+    Objective = HorizonNetwork.total_energy() + opposing_fields_energy_mev(...).
+    No extra weights or fudge factors: one total energy, one equilibrium. Target:
+    distances from PDE on 8×8; here minimization over that total energy yields geometry.
     """
     if algebra is None:
         from pyhqiv.algebra import OctonionHQIVAlgebra
@@ -209,7 +257,9 @@ def minimize_nucleon_configuration(
             for i in range(A)
         ]
         net = HorizonNetwork(nodes, lattice_base_m, algebra=algebra)
-        return net.total_energy()
+        E_net = net.total_energy()
+        E_opp = opposing_fields_energy_mev(positions, is_proton, algebra=algebra)
+        return E_net + E_opp
 
     if initial_guess is None:
         initial_guess = _initial_guess_positions(radii_m, is_proton, lattice_base_m)
@@ -374,6 +424,179 @@ def _binding_energy_via_network(
         E_bound = net_bound.total_energy()
         theta_bound = net_bound.effective_theta_array()
     return (float(E_free - E_bound), theta_bound)
+
+
+def opposing_fields_energy_mev(
+    positions_m: np.ndarray,
+    is_proton_list: List[bool],
+    algebra=None,
+) -> float:
+    """
+    Opposing-field energy (MeV) to add to E_bound: p–p Coulomb repulsion and p–n from neutron wrapped charge.
+
+    In 4He (and any Z≥2) the two protons repel; in 2H the neutron is not strictly neutral—its charge is
+    wrapped up smaller (8×8 folded vs unwrapped). Both effects raise E_bound and thus reduce B.
+
+    - E_pp = α_em × ħc × Σ_{i<j, both proton} (1/d_ij)  [standard Coulomb scale]
+    - E_pn = ζ × α_em × ħc × Σ_{p–n pairs} (1/d)  with ζ from nucleon_charge_unwrapped_folded_measures(udd).
+    """
+    positions_m = np.asarray(positions_m, dtype=float)
+    A = positions_m.shape[0]
+    if A <= 1:
+        return 0.0
+    is_proton_list = list(is_proton_list)[:A]
+    alpha_em = 1.0 / max(ALPHA_EM_INV, 1e-30)
+    # ħc in MeV·fm so E = α_em * ħc / d_fm
+    scale = alpha_em * HBAR_C_MEV_FM
+    # Neutron wrapped-charge scale ζ from 8×8 (once)
+    zeta_pn = 0.0
+    if any(is_proton_list) and not all(is_proton_list):
+        if algebra is None:
+            from pyhqiv.algebra import OctonionHQIVAlgebra
+            algebra = OctonionHQIVAlgebra(verbose=False)
+        from pyhqiv.subatomic import nucleon_charge_unwrapped_folded_measures
+        m_uud = nucleon_charge_unwrapped_folded_measures("uud", algebra=algebra)
+        m_udd = nucleon_charge_unwrapped_folded_measures("udd", algebra=algebra)
+        coh_uud = m_uud.get("coherence", 1.0)
+        coh_udd = m_udd.get("coherence", 1.0)
+        zeta_pn = max(0.0, 1.0 - coh_udd / max(coh_uud, 1e-30))
+    E_opp = 0.0
+    for i in range(A):
+        for j in range(i + 1, A):
+            d_m = float(np.linalg.norm(positions_m[i] - positions_m[j])) + 1e-30
+            d_fm = d_m * 1e15
+            inv_d = 1.0 / d_fm
+            if is_proton_list[i] and is_proton_list[j]:
+                E_opp += scale * inv_d
+            elif (is_proton_list[i] and not is_proton_list[j]) or (not is_proton_list[i] and is_proton_list[j]):
+                E_opp += zeta_pn * scale * inv_d
+    return float(E_opp)
+
+
+def binding_energy_mev_nucleon_level(
+    P: int,
+    N: int,
+    t_cmb: float = 2.725,
+    algebra=None,
+) -> Tuple[float, float, float]:
+    """
+    Binding energy using only nucleon nodes (no quark expansion). Same scale as E_free.
+
+    E_free = sum of single-nucleon HorizonNetwork total_energy() (same formula as E_bound).
+    E_bound = HorizonNetwork(nucleon nodes).total_energy().
+    Returns (B_mev, E_free, E_bound). Bound state should have E_bound < E_free (B > 0).
+    """
+    if P <= 0 and N <= 0:
+        return (0.0, 0.0, 0.0)
+    const = get_hqiv_nuclear_constants(t_cmb)
+    lattice_base_m = const["LATTICE_BASE_M"]
+    if algebra is None:
+        from pyhqiv.algebra import OctonionHQIVAlgebra
+        algebra = OctonionHQIVAlgebra(verbose=False)
+    M_p = _nucleon_state_matrix_unprojected(True, algebra)
+    M_n = _nucleon_state_matrix_unprojected(False, algebra)
+    origin = np.zeros(3)
+    E_free = 0.0
+    for _ in range(P):
+        net = HorizonNetwork(
+            [(origin, M_p, M_PROTON_MEV)],
+            lattice_base_m,
+            algebra=algebra,
+        )
+        E_free += net.total_energy()
+    for _ in range(N):
+        net = HorizonNetwork(
+            [(origin, M_n, M_NEUTRON_MEV)],
+            lattice_base_m,
+            algebra=algebra,
+        )
+        E_free += net.total_energy()
+    hbar_c_mev_m = HBAR_C_MEV_FM * 1e-15
+    r_p = hbar_c_mev_m / M_PROTON_MEV
+    r_n = hbar_c_mev_m / M_NEUTRON_MEV
+    radii_m = np.array([r_p] * P + [r_n] * N)
+    is_proton_list = [True] * P + [False] * N
+    positions = minimize_nucleon_configuration(radii_m, is_proton_list, lattice_base_m, algebra)
+    nodes = (
+        [(positions[i], M_p, M_PROTON_MEV) for i in range(P)]
+        + [(positions[P + j], M_n, M_NEUTRON_MEV) for j in range(N)]
+    )
+    net = HorizonNetwork(nodes, lattice_base_m, algebra=algebra)
+    E_bound = net.total_energy()
+    E_bound += opposing_fields_energy_mev(positions, is_proton_list, algebra=algebra)
+    B = float(E_free - E_bound)
+    return (B, E_free, E_bound)
+
+
+def binding_energy_mev_quark_level(
+    P: int,
+    N: int,
+    t_cmb: float = 2.725,
+    algebra=None,
+) -> Tuple[float, float, float]:
+    """
+    Binding energy with full quark expansion (3×A nodes). E_bound on nucleon scale from per-nucleon Θ.
+
+    E_free = sum of single-nucleon HorizonNetwork total_energy() (same as nucleon-level).
+    Expand to quarks; get per-nucleon Θ = (Θ_q1 Θ_q2 Θ_q3)^(1/3).
+    E_bound = Σ_nucleons (M_n + ħc/Θ_n) − binding_correction so scale matches E_free.
+    Returns (B_mev, E_free, E_bound).
+    """
+    if P <= 0 and N <= 0:
+        return (0.0, 0.0, 0.0)
+    const = get_hqiv_nuclear_constants(t_cmb)
+    lattice_base_m = const["LATTICE_BASE_M"]
+    if algebra is None:
+        from pyhqiv.algebra import OctonionHQIVAlgebra
+        algebra = OctonionHQIVAlgebra(verbose=False)
+    M_p = _nucleon_state_matrix_unprojected(True, algebra)
+    M_n = _nucleon_state_matrix_unprojected(False, algebra)
+    origin = np.zeros(3)
+    E_free = 0.0
+    for _ in range(P):
+        net = HorizonNetwork(
+            [(origin, M_p, M_PROTON_MEV)],
+            lattice_base_m,
+            algebra=algebra,
+        )
+        E_free += net.total_energy()
+    for _ in range(N):
+        net = HorizonNetwork(
+            [(origin, M_n, M_NEUTRON_MEV)],
+            lattice_base_m,
+            algebra=algebra,
+        )
+        E_free += net.total_energy()
+    hbar_c_mev_m = HBAR_C_MEV_FM * 1e-15
+    r_p = hbar_c_mev_m / M_PROTON_MEV
+    r_n = hbar_c_mev_m / M_NEUTRON_MEV
+    radii_m = np.array([r_p] * P + [r_n] * N)
+    is_proton_list = [True] * P + [False] * N
+    positions = minimize_nucleon_configuration(radii_m, is_proton_list, lattice_base_m, algebra)
+    nodes = (
+        [(positions[i], M_p, M_PROTON_MEV) for i in range(P)]
+        + [(positions[P + j], M_n, M_NEUTRON_MEV) for j in range(N)]
+    )
+    quark_nodes = expand_to_quarks(nodes, is_proton_list, algebra=algebra)
+    net = HorizonNetwork(quark_nodes, lattice_base_m, algebra=algebra)
+    theta_per_quark = net.effective_theta_array()
+    A = P + N
+    E_bound = 0.0
+    for n in range(A):
+        t1 = theta_per_quark[3 * n]
+        t2 = theta_per_quark[3 * n + 1]
+        t3 = theta_per_quark[3 * n + 2]
+        theta_n = (t1 * t2 * t3) ** (1.0 / 3.0)
+        theta_n = max(theta_n, 1e-30)
+        mass_n = M_PROTON_MEV if is_proton_list[n] else M_NEUTRON_MEV
+        E_bound += mass_n + hbar_c_mev_m / theta_n
+    # Apply same binding correction as HorizonNetwork (N = A nucleons)
+    m_eff = max(1, int(E_bound / 1000.0))
+    correction = E_bound * (1.0 / (m_eff + 1.0)) * (A / M_TRANS)
+    E_bound = E_bound - correction
+    E_bound += opposing_fields_energy_mev(positions, is_proton_list, algebra=algebra)
+    B = float(E_free - E_bound)
+    return (B, E_free, E_bound)
 
 
 def _binding_energy_via_algebra(
@@ -641,8 +864,14 @@ def delta_E_info_mev(theta_unstable_m: float, theta_stable_m: float) -> float:
 
 
 def binding_energy_mev(P: int, N: int, t_cmb: float = 2.725) -> float:
-    """Nuclear binding energy B = E_free − E_bound (MeV). First principles only (merge path)."""
+    """Nuclear binding energy B = E_free − E_bound (MeV). First principles (HorizonNetwork + layer-0 nucleons)."""
     return NuclearConfig(P, N, t_cmb=t_cmb).binding_energy_mev
+
+
+def binding_energy_isotope(symbol: str, A: int, t_cmb: float = 2.725) -> float:
+    """Binding energy (MeV) for any isotope: symbol + mass number (e.g. binding_energy_isotope('C', 14))."""
+    P, N = nuclide_from_symbol(symbol, A=A)
+    return binding_energy_mev(P, N, t_cmb=t_cmb)
 
 
 def binding_energy_mev_algebraic(P: int, N: int, t_cmb: float = 2.725) -> float:
@@ -746,7 +975,7 @@ class Nuclide:
                     return p, ndef
             raise ValueError(f"Unknown mass number {A}. Use e.g. 'U-238' or (92, 146).")
         s_clean = str(s).strip().replace(" ", "")
-        # P-A with hyphen: "92-238"
+        # Z-A with hyphen: "92-238"
         m = re.match(r"^(\d+)-(\d+)$", s_clean)
         if m:
             P, A = int(m.group(1)), int(m.group(2))
@@ -754,28 +983,27 @@ class Nuclide:
             if N >= 0:
                 return P, N
         s = s_clean.lower().replace("-", "")
-        # Element + mass: "u238", "238u", "helium4", "carbon14"
+        # Element + mass: "u238", "238u", "helium4", "carbon14", "C-14"
         m = re.match(r"^(\d+)?([a-z]+)(\d+)?$", s)
         if m:
             num1, elem, num2 = m.groups()
             mass = int(num1 or num2 or 0)
-            sym = _ELEMENT_NAME_TO_SYMBOL.get(elem, elem.title())
-            P, N_default = _ELEMENT_PN.get(sym, (0, 0))
+            sym = _ELEMENT_NAME_TO_SYMBOL.get(elem) or (elem[0].upper() + elem[1:].lower() if len(elem) >= 1 else elem.upper())
+            P = ELEMENT_SYMBOL_TO_Z.get(sym) or _ELEMENT_PN.get(sym, (0, 0))[0]
+            if P == 0:
+                raise ValueError(f"Unknown element '{elem}'. Use symbol (C, U, ...) or name (carbon, uranium).")
             if mass == 0:
-                mass = P + N_default
+                mass = P + (_ELEMENT_PN.get(sym, (P, P))[1])
             N = mass - P
             if N >= 0:
                 return P, N
         raise ValueError(
-            f"Could not parse nuclide '{s}'. Try 'U-238', 'He-4', 'carbon-14', 238, or (P, N)."
+            f"Could not parse nuclide '{s}'. Try 'U-238', 'He-4', 'C-14', 'carbon-14', or (P, N)."
         )
 
     @staticmethod
     def _get_symbol(Z: int) -> Optional[str]:
-        for sym, (p, _) in _ELEMENT_PN.items():
-            if p == Z:
-                return sym
-        return None
+        return ELEMENT_Z_TO_SYMBOL.get(Z)
 
     @property
     def half_life(self):
@@ -831,11 +1059,17 @@ class Nuclide:
 
 
 __all__ = [
+    "ELEMENT_SYMBOL_TO_Z",
+    "ELEMENT_Z_TO_SYMBOL",
     "nuclide_from_symbol",
     "NuclearConfig",
     "Nuclide",
     "delta_E_info_mev",
+    "opposing_fields_energy_mev",
     "binding_energy_mev",
+    "binding_energy_mev_nucleon_level",
+    "binding_energy_mev_quark_level",
+    "binding_energy_isotope",
     "binding_energy_mev_algebraic",
     "build_nucleon_matrix_with_phase",
     "theta_nuclear_stable_m",

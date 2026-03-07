@@ -5,6 +5,8 @@ import numpy as np
 from pyhqiv.nuclear import (
     NuclearConfig,
     binding_energy_mev_algebraic,
+    binding_energy_mev_nucleon_level,
+    binding_energy_mev_quark_level,
     build_nucleon_matrix_with_phase,
     decay_chain,
     decay_chain_nuclide_hqiv,
@@ -135,3 +137,19 @@ def test_stable_nuclide_zero_decay_rate():
     t_half = n14.half_life_s()
     # With B-derived Θ, SEMF can give small Q for β±; rate 0 or half-life ≫ 1 year
     assert rate == 0.0 or (t_half is not None and t_half > 3.15e7)
+
+
+def test_binding_2h_4he_nucleon_level():
+    """2H and 4He: nucleon-level network gives E_bound < E_free (positive binding)."""
+    for P, N in [(1, 1), (2, 2)]:
+        B, E_free, E_bound = binding_energy_mev_nucleon_level(P, N)
+        assert E_bound < E_free, f"2H/4He nucleon-level (P={P},N={N}): E_bound {E_bound} < E_free {E_free}"
+        assert B > 0 and np.isfinite(B), f"2H/4He nucleon-level (P={P},N={N}): B={B} positive and finite"
+
+
+def test_binding_2h_4he_quark_level():
+    """2H and 4He: quark-level (nucleon-scale E_bound from per-nucleon Θ) gives E_bound < E_free."""
+    for P, N in [(1, 1), (2, 2)]:
+        B, E_free, E_bound = binding_energy_mev_quark_level(P, N)
+        assert E_bound < E_free, f"2H/4He quark-level (P={P},N={N}): E_bound {E_bound} < E_free {E_free}"
+        assert B > 0 and np.isfinite(B), f"2H/4He quark-level (P={P},N={N}): B={B} positive and finite"

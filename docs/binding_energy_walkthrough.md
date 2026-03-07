@@ -85,6 +85,12 @@ Binding and bound Θ use **HorizonNetwork** (`pyhqiv.horizon_network`), **no Δ 
 
 No eps_delta, no algebraic Tr(M@Δ) for Θ; only masses → radii → μ. Same construction scales to 238 spheres (U) or residues (proteins).
 
+### 4.0 Nucleons as 8×8 and geometry from total energy (same as quarks)
+
+Each proton or neutron is its **final 8×8 matrix** (merged composite of three quarks); in principle their **distances are found by solving a PDE** from the axiom and that 8×8 field (same programme as for quarks: energy well from the state, then Euler–Lagrange / PDE for equilibrium). In the code we approximate that by **minimizing total energy**: objective = HorizonNetwork.total_energy() + opposing_fields_energy_mev(positions, is_proton). No extra weights or epsilons—one total energy, one equilibrium.
+
+> **Admonition: theory pure, no numerology.** We prefer theory-pure over fitting: no free parameters, no constants or epsilons thrown in to match a number. If a prediction disagrees with experiment, we improve the model (e.g. full PDE from 8×8, better lattice scalings), not patch it with numerology.
+
 ### 4.1 Effective potential for the balanced well (pure algebra, no new constants)
 
 The total interaction between two horizons is an effective potential already implicit in the network; it can be written explicitly for **any two horizon radii** (universally applicable):
@@ -103,7 +109,7 @@ V_{\rm attr}(r) = -B\,\frac{\phi(r)}{r^6} - C\cdot\operatorname{tr}(M_1 M_2 \Del
 
 - **`effective_potential_pair(r_m, r1_m, r2_m, lattice_base_m, ...)`** — returns \(V_{\rm eff}(r)\) in MeV; optional trace term and \(\lambda_{\rm coh}\).
 - **`equilibrium_separation_two_horizons(r1_m, r2_m, lattice_base_m, ...)`** — returns r_eq in metres (e.g. ~1.4 fm for two nucleons). Use this to get the appropriate distance for any two horizon radii.
-- **`minimize_nucleon_configuration(radii_m, is_proton, lattice_base_m, ...)`** (in `nuclear`) — finds equilibrium positions by minimizing `HorizonNetwork.total_energy()`; reuses the same algebra and φ-coupling.
+- **`minimize_nucleon_configuration(radii_m, is_proton, lattice_base_m, ...)`** (in `nuclear`) — finds equilibrium positions by minimizing **total energy** = `HorizonNetwork.total_energy()` + `opposing_fields_energy_mev(...)`; no extra weights or fudge factors.
 
 Layer-0 quark touching can use the same minimizer with quark radii and charges to close the full hierarchical ladder.
 
@@ -114,6 +120,15 @@ Layer-0 quark touching can use the same minimizer with quark radii and charges t
 - **Physical binding** means the nucleus has *lower* energy than free nucleons → **E_bound < E_free** → **B > 0**.
 - That requires **larger** effective Θ in the bound cluster: guaranteed by μ > 1 when the component has N ≥ 2 touching spheres.
 - Magnitude of B set by geometry (radii from masses); nucleon masses set node radii in the network, while the free proton/neutron ordering is fixed by the layer-0 8×8 merge.
+
+### 5.1 Opposing fields (p–p and p–n)
+
+Beyond the horizon network, **opposing fields** raise E_bound and reduce B:
+
+- **Proton–proton:** Coulomb repulsion \(E_{\rm pp} = \alpha_{\rm EM}\,\hbar c\,\sum_{i<j,\,{\rm both\ proton}} 1/d_{ij}\) (standard EM scale). In 4He the two protons repel; this term is included in `opposing_fields_energy_mev` and added to E_bound in both nucleon-level and quark-level binding.
+- **Proton–neutron:** The neutron is not strictly neutral—its charge is “wrapped up smaller” (8×8 folded vs unwrapped). `nucleon_charge_unwrapped_folded_measures("udd")` vs `("uud")` gives a scale ζ (e.g. from coherence ratio); then \(E_{\rm pn} = \zeta\,\alpha_{\rm EM}\,\hbar c\,\sum_{\rm p–n} 1/d\). So even in 2H there is a small opposing contribution from the neutron’s wrapped charge.
+
+**API:** `opposing_fields_energy_mev(positions_m, is_proton_list, algebra=None)` returns the total opposing-field energy (MeV) to add to E_bound. Both `binding_energy_mev_nucleon_level` and `binding_energy_mev_quark_level` add this to E_bound so that B = E_free − E_bound reflects the competition between horizon binding and these opposing fields.
 
 ---
 
@@ -262,3 +277,13 @@ With this change the same ladder already distinguishes
 - He-4 stability
 
 without any isotope-specific constants or if-branches.
+
+### 6.5.2 Atomic range: any isotope, half-lives, decay chains
+
+The same first-principles stack (hadrons → nucleons → nuclei) applies to **any isotope of any element** (Z 1–118):
+
+- **Binding energy:** `binding_energy_mev(P, N)` or `binding_energy_isotope(symbol, A)` (e.g. `binding_energy_isotope('C', 14)`).
+- **Resolve (symbol, A) → (P, N):** `nuclide_from_symbol(symbol, A=A)`; full periodic table in `ELEMENT_SYMBOL_TO_Z` / `ELEMENT_Z_TO_SYMBOL`.
+- **Half-life:** `half_life_nuclide_hqiv(P, N)` from snap probability (E_info, φ, τ_tick).
+- **Decay chain:** `decay_chain_nuclide_hqiv(P, N, max_steps)` or `Nuclide('U-238').decay_chain()` (β±, α, fission).
+- **Coupling angles:** Subatomic 3-quark angles from `quark_binding_angles(flavor_content)`; nuclear geometry from HorizonNetwork overlap graph.

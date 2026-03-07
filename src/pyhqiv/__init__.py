@@ -110,9 +110,12 @@ from pyhqiv.subatomic import (
     t_qcd_gev_at_epoch,
 )
 from pyhqiv.nuclear import (
+    ELEMENT_SYMBOL_TO_Z,
+    ELEMENT_Z_TO_SYMBOL,
     Nuclide,
     NuclearConfig,
     nuclide_from_symbol,
+    binding_energy_isotope,
     half_life_nuclide_hqiv,
     decay_chain_nuclide_hqiv,
 )
@@ -240,7 +243,10 @@ __all__ = [
     "quark_state_matrix",
     "Nuclide",
     "NuclearConfig",
+    "ELEMENT_SYMBOL_TO_Z",
+    "ELEMENT_Z_TO_SYMBOL",
     "nuclide_from_symbol",
+    "binding_energy_isotope",
     "half_life_nuclide_hqiv",
     "decay_chain_nuclide_hqiv",
     "HQIVOrbit",
