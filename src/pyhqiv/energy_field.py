@@ -23,6 +23,7 @@ from typing import List, Optional, Union
 import numpy as np
 
 from pyhqiv.constants import C_SI, HBAR_SI, HBAR_C_MEV_FM
+from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
 
 # ħc in J·m for energy density (scalar part: ħc/Δx with Δx in m)
 _HBAR_C_SI: float = HBAR_SI * C_SI
@@ -274,9 +275,101 @@ class HQIVEnergyField:
         return _HBAR_C_MEV_M / theta_m
 
 
+def total_energy_from_state_matrix(
+    composite: Union["HQIVEnergyField", np.ndarray],
+    t_cmb: float = 2.725,
+    algebra=None,
+) -> float:
+    """
+    Total bound energy E (MeV) from a merged 8×8 state: E = ħc/Θ with Θ = L× (8 + tr(M@Δ)).
+
+    Same invariant as single nucleons and _bound_theta_from_matrix_composition: lattice
+    scale L from T_CMB, effective modes from algebraic shift. Use for nucleus composite
+    (merge of P protons + N neutrons) so binding emerges from the matrix.
+    """
+    alg = algebra or _default_algebra()
+    if hasattr(composite, "state_matrix"):
+        M = np.asarray(composite.state_matrix, dtype=float)
+        alg = getattr(composite, "algebra", None) or alg
+    else:
+        M = np.asarray(composite, dtype=float).reshape(8, 8)
+    const = get_hqiv_nuclear_constants(t_cmb)
+    lattice_base_m = const["LATTICE_BASE_M"]
+    effective_modes = 8.0 + float(np.trace(M @ alg.Delta))
+    theta_m = lattice_base_m * max(effective_modes, 1e-30)
+    return _HBAR_C_MEV_M / theta_m
+
+
+def confined_energy_from_composite(
+    composite: Union[np.ndarray, "HQIVEnergyField"],
+    t_cmb: float = 2.725,
+) -> float:
+    """
+    Uses EXACTLY the same confined normalization as proton/neutron masses.
+    (L * 1e-4 sub-scale + algebraic shift from the matrix.)
+    This makes nuclear E_bound sit on the same absolute scale as E_free.
+    """
+    from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
+
+    const = get_hqiv_nuclear_constants(t_cmb)
+    L = const["LATTICE_BASE_M"]
+    sub_scale = L * 1e-4  # same factor that nails proton/neutron masses
+
+    if isinstance(composite, np.ndarray):
+        M = np.asarray(composite, dtype=float).reshape(8, 8)
+        alg = _default_algebra()
+    else:
+        M = np.asarray(composite.state_matrix, dtype=float)
+        alg = getattr(composite, "algebra", None) or _default_algebra()
+
+    algebraic_shift = float(np.trace(M @ alg.Delta))
+    effective_modes = 8.0 + algebraic_shift
+    Theta_confined = sub_scale * max(effective_modes, 1e-30)
+    return _HBAR_C_MEV_M / Theta_confined
+
+
+def confined_energy_nuclear_composite(
+    composite: Union[np.ndarray, "HQIVEnergyField"],
+    A: int,
+    t_cmb: float = 2.725,
+) -> float:
+    """
+    Bound nucleus energy (MeV) from merged nucleon 8×8 matrices — same framework as hadrons.
+
+    Each nucleon is its own 8×8; merge_constituents finds the composite; electric field
+    (Coulomb, wrapped charge) is added separately via opposing_fields_energy_mev.
+    Scale: E_nucleus = A * ħc / (L×1e-4 × (8 + tr(M@Δ)) so that (8+tr) from the merge
+    sets the per-nucleon effective horizon; larger (8+tr) → more coherence → lower E → binding.
+    For A=1 this matches confined_energy_from_composite (one nucleon).
+    """
+    from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
+
+    const = get_hqiv_nuclear_constants(t_cmb)
+    L = const["LATTICE_BASE_M"]
+    sub_scale = L * 1e-4
+
+    if isinstance(composite, np.ndarray):
+        M = np.asarray(composite, dtype=float).reshape(8, 8)
+        alg = _default_algebra()
+    else:
+        M = np.asarray(composite.state_matrix, dtype=float)
+        alg = getattr(composite, "algebra", None) or _default_algebra()
+
+    algebraic_shift = float(np.trace(M @ alg.Delta))
+    effective_modes = 8.0 + algebraic_shift
+    # Same confined scale as one hadron: Θ = sub_scale * (8+tr). Total nucleus E = A * ħc/Θ
+    # so when (8+tr) equals single-nucleon value, E = A * m_nucleon; when (8+tr) is larger
+    # (more coherent merge), E < A*m_nucleon → binding.
+    theta_scale = sub_scale * max(effective_modes, 1e-30)
+    return A * _HBAR_C_MEV_M / max(theta_scale, 1e-30)
+
+
 __all__ = [
     "HQIVEnergyField",
     "merge_constituents",
     "effective_horizon_from_energy_mev",
     "species_matrix_for_species",
+    "total_energy_from_state_matrix",
+    "confined_energy_from_composite",
+    "confined_energy_nuclear_composite",
 ]

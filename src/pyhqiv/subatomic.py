@@ -290,7 +290,8 @@ def nucleon_charge_unwrapped_folded_measures(
     First-principles measures of "charge unwrapped" (uud) vs "folded" (udd) from the 8×8 composite only.
 
     Physical picture: unwrapped (e.g. uud) has higher coherence; folded (e.g. udd) more bundled energy.
-    Same formula for any confined state (baryons, pentaquarks). All from merged 8×8 M (no Coulomb).
+    The neutron (udd) carries hypercharge/EM in the 4×4 block M[4:8, 4:8]—compact inside the mass
+    horizon but still coupling to external fields (e.g. proton). Same formula for any confined state.
 
     Parameters
     ----------

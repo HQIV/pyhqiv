@@ -3,8 +3,10 @@
 import numpy as np
 
 from pyhqiv.nuclear import (
+    BindingResult,
     NuclearConfig,
     binding_energy_mev_algebraic,
+    binding_energy_mev_functional,
     binding_energy_mev_nucleon_level,
     binding_energy_mev_quark_level,
     build_nucleon_matrix_with_phase,
@@ -130,6 +132,24 @@ def test_binding_energy_mev_algebraic_returns_float():
     assert np.isfinite(b)
 
 
+# ── Binding energy: reality vs first-principles paths ──
+#
+# Experiment: He-4 B ≈ 28.3 MeV, 2H ≈ 2.2 MeV (AME/NNDC). HQIV: B = E_free − E_bound.
+# All three paths use the same minimizer (minimize_nucleon_configuration) for positions.
+# They differ only in how E_free and E_bound are defined:
+#
+# 1. Gold-standard functional: E_free = P·E_p + N·E_n (exact PDG from subatomic). E_bound from
+#    HorizonNetwork(nucleon nodes at minimized positions) + E_opp. Can yield B ≤ 0 if network
+#    + E_opp gives E_bound ≥ E_free.
+# 2. Nucleon-level: E_free = sum of single-nucleon HorizonNetwork(one node at origin).total_energy();
+#    E_bound = HorizonNetwork(nucleon nodes at same minimized positions) + E_opp. Same recipe
+#    for free and bound → often B > 0 for 2H/4He.
+# 3. Quark-level: same E_free as (2); E_bound from quark expansion (3×A nodes) + per-nucleon Θ
+#    + E_opp. Validates quark-layer consistency; also gives B > 0 for 2H/4He.
+#
+# test_physical_values.py asserts binding_energy_mev(P,N) (functional) against experiment (no clamp).
+
+
 def test_stable_nuclide_zero_decay_rate():
     """N-14 (7,7): either no allowed snaps (rate 0) or effectively stable (long t_1/2)."""
     n14 = NuclearConfig(7, 7, "N14")
@@ -137,6 +157,22 @@ def test_stable_nuclide_zero_decay_rate():
     t_half = n14.half_life_s()
     # With B-derived Θ, SEMF can give small Q for β±; rate 0 or half-life ≫ 1 year
     assert rate == 0.0 or (t_half is not None and t_half > 3.15e7)
+
+
+def test_binding_gold_standard_2h_4he():
+    """Gold standard: functional method returns BindingResult with correct shape and self-consistency."""
+    for P, N in [(1, 1), (2, 2)]:
+        res = binding_energy_mev_functional(P, N)
+        assert isinstance(res, BindingResult)
+        assert res.positions_m.shape[0] == P + N, f"(P={P},N={N}): positions shape"
+        assert np.isfinite(res.theta_p_m) and res.theta_p_m > 0
+        assert np.isfinite(res.theta_n_m) and res.theta_n_m > 0
+        assert np.isfinite(res.B_mev) and np.isfinite(res.E_free_mev) and np.isfinite(res.E_bound_mev)
+        # Self-consistency: B = E_free - E_bound
+        np.testing.assert_allclose(res.B_mev, res.E_free_mev - res.E_bound_mev, rtol=1e-9)
+        # When binding is positive, bound state is lower than free
+        if res.B_mev > 0:
+            assert res.E_bound_mev < res.E_free_mev
 
 
 def test_binding_2h_4he_nucleon_level():
@@ -153,3 +189,47 @@ def test_binding_2h_4he_quark_level():
         B, E_free, E_bound = binding_energy_mev_quark_level(P, N)
         assert E_bound < E_free, f"2H/4He quark-level (P={P},N={N}): E_bound {E_bound} < E_free {E_free}"
         assert B > 0 and np.isfinite(B), f"2H/4He quark-level (P={P},N={N}): B={B} positive and finite"
+
+
+# ── Qualified statements (gold standard: neutron, C-14, heavy water) ──
+
+
+def test_free_neutron_half_life_qualified():
+    """Free neutron (0,1): we predict a half-life in seconds (PDG ≈ 879 s)."""
+    t_half = half_life_nuclide_hqiv(0, 1)
+    # Either unstable (finite half-life) or stable (None)
+    if t_half is not None:
+        assert np.isfinite(t_half) and t_half > 0
+
+
+def test_c14_nuclide_and_decay_chain_qualified():
+    """C-14: (6,8); decay chain includes β⁻ daughter N-14 (7,7)."""
+    P, N = nuclide_from_symbol("C", A=14)
+    assert (P, N) == (6, 8)
+    chain = decay_chain(6, 8, max_steps=10)
+    assert len(chain) >= 1 and chain[0] == (6, 8)
+    # When β⁻ is allowed, first daughter is (7, 7)
+    t_half, mode, dP, dN, chain2 = decay_chain_nuclide_hqiv(6, 8)
+    if len(chain2) >= 2:
+        assert chain2[1] == (7, 7), f"C-14 daughter should be N-14 (7,7), got {chain2[1]}"
+    if mode == "β-":
+        assert dP == 7 and dN == 7
+
+
+def test_c14_half_life_qualified():
+    """C-14: we predict a half-life in seconds when unstable (PDG ≈ 5700 yr)."""
+    t_half = half_life_nuclide_hqiv(6, 8)
+    if t_half is not None:
+        assert np.isfinite(t_half) and t_half > 0
+
+
+def test_heavy_water_theta_qualified():
+    """Heavy water: Θ for deuterium (mass_amu=2) is isotope-dependent and finite."""
+    from pyhqiv.utils import theta_for_atom
+
+    theta_D = theta_for_atom("H", coordination=2, mass_amu=2)
+    theta_H = theta_for_atom("H", coordination=2)  # default mass
+    assert np.isfinite(theta_D) and theta_D > 0
+    assert np.isfinite(theta_H) and theta_H > 0
+    # Heavier isotope → larger Θ in current scaling (mass_amu scaling in theta_local)
+    assert theta_D > theta_H

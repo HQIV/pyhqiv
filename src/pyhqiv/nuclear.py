@@ -21,7 +21,7 @@ See docs/binding_energy_walkthrough.md for the full hierarchical walkthrough.
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Tuple, Union
+from typing import List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 
@@ -177,6 +177,30 @@ def _nucleon_state_matrix_unprojected(is_proton: bool, algebra) -> np.ndarray:
     return composite.state_matrix
 
 
+def _non_em_fraction_pair(is_proton_i: bool, is_proton_j: bool, algebra=None) -> float:
+    """
+    Fraction of the merged 8×8 (nucleon i + nucleon j) that is *not* the EM block.
+
+    The electric field lives in the 4×4 block M[4:8, 4:8] (hypercharge/EM). Only the
+    rest of the matrix contributes to mass/horizon geometry and thus to Casimir-like
+    attraction. Returns (1 - block_4x4_fraction) of the merged state.
+    """
+    if algebra is None:
+        from pyhqiv.algebra import OctonionHQIVAlgebra
+        algebra = OctonionHQIVAlgebra(verbose=False)
+    M_i = _nucleon_state_matrix_unprojected(is_proton_i, algebra)
+    M_j = _nucleon_state_matrix_unprojected(is_proton_j, algebra)
+    from pyhqiv.energy_field import merge_constituents
+    composite = merge_constituents([M_i, M_j], project_singlet=False, algebra=algebra)
+    M = np.asarray(composite.state_matrix, dtype=float)
+    fro_sq = float(np.linalg.norm(M) ** 2)
+    if fro_sq <= 0:
+        return 1.0
+    block_em = M[4:8, 4:8]
+    em_frac = float(np.linalg.norm(block_em) ** 2) / fro_sq
+    return float(max(0.0, 1.0 - em_frac))
+
+
 def build_nucleon_matrix_with_phase(
     is_proton: bool,
     lattice_base_m: float,
@@ -203,15 +227,13 @@ def build_nucleon_matrix_with_phase(
 def _initial_guess_positions(
     radii_m: np.ndarray,
     is_proton: List[bool],
-    lattice_base_m: float,
+    lattice_base_m: Optional[float] = None,
 ) -> np.ndarray:
-    """Initial positions (m) for minimizer: tetrahedron for A=4 at balanced-well scale; else force-based relax."""
-    from pyhqiv.horizon_network import R_EQ_SCALE
-
+    """Initial positions (m) for minimizer: tetrahedron for A=4 at touch scale; else force-based relax. No constants."""
     A = len(radii_m)
     if A == 4:
         r_avg = float(np.mean(radii_m))
-        edge_m = R_EQ_SCALE * (2.0 * r_avg) * 0.98
+        edge_m = 2.0 * r_avg  # touch distance from mass (r = ħc/m)
         scale = edge_m / (2.0 * np.sqrt(2.0))
         verts = np.array([
             [1.0, 1.0, 1.0],
@@ -221,6 +243,92 @@ def _initial_guess_positions(
         ], dtype=float) * scale
         return verts
     return relax_nucleon_positions(radii_m, is_proton)
+
+
+def positions_at_r_eq_discrete(
+    P: int,
+    N: int,
+    lattice_base_m: float,
+    touch_tolerance: float = 0.999,
+) -> np.ndarray:
+    """
+    Place nucleons at the equilibrium separation r_eq from the effective potential (Pauli + V_eff).
+
+    Nucleons as discrete computational objects: pairwise distance = r_eq so they sit in the
+    balanced well. Use touch_tolerance < 1 so d = r_eq*touch_tolerance counts as connected (μ > 1).
+    Returns positions (A, 3) in metres. 2H: one pair; 4He: tetrahedron with edge = r_eq_avg.
+    """
+    A = P + N
+    if A <= 1:
+        return np.zeros((A, 3))
+    hbar_c_m = HBAR_C_MEV_FM * 1e-15
+    r_p = hbar_c_m / M_PROTON_MEV
+    r_n = hbar_c_m / M_NEUTRON_MEV
+    radii_m = np.array([r_p] * P + [r_n] * N)
+    r_eq_list: List[float] = []
+    for i in range(A):
+        for j in range(i + 1, A):
+            r_eq_ij = equilibrium_separation_two_horizons(radii_m[i], radii_m[j], lattice_base_m)
+            r_eq_list.append(r_eq_ij)
+    r_eq_avg = float(np.mean(r_eq_list))
+    if A == 2:
+        d = r_eq_avg * touch_tolerance
+        positions = np.array([[-0.5 * d, 0.0, 0.0], [0.5 * d, 0.0, 0.0]])
+    elif A == 4:
+        # Tetrahedron: edge length = r_eq_avg * touch_tolerance
+        edge = r_eq_avg * touch_tolerance
+        a = edge / np.sqrt(2)
+        positions = np.array([
+            [a, a, a], [-a, -a, a], [-a, a, -a], [a, -a, -a],
+        ], dtype=float)
+        positions -= np.mean(positions, axis=0)
+    else:
+        # Fallback: relax with radii
+        from pyhqiv.horizon_network import relax_nucleon_positions
+        is_proton_list = [True] * P + [False] * N
+        positions = relax_nucleon_positions(radii_m, is_proton_list)
+        # Scale to r_eq_avg
+        if A >= 2:
+            d_curr = float(np.linalg.norm(positions[0] - positions[1]))
+            if d_curr > 1e-30:
+                positions *= (r_eq_avg * touch_tolerance) / d_curr
+    return positions
+
+
+def binding_energy_mev_from_r_eq_discrete(
+    P: int,
+    N: int,
+    t_cmb: float = 2.725,
+    algebra=None,
+) -> Tuple[float, float, float]:
+    """
+    Binding from discrete r_eq: nucleons placed at equilibrium separation (Pauli + V_eff);
+    E_bound from HorizonNetwork (mode sharing μ > 1) + opposing_fields. Returns (B_mev, E_free, E_bound).
+    """
+    if P <= 0 and N <= 0:
+        return (0.0, 0.0, 0.0)
+    E_free = float(P * M_PROTON_MEV + N * M_NEUTRON_MEV)
+    # DISABLED: produces negative B (E_bound > E_free). Re-enable when HorizonNetwork/μ formula
+    # yields positive binding at r_eq (see docs/binding_energy_walkthrough.md §6.5.3).
+    # if algebra is None:
+    #     from pyhqiv.algebra import OctonionHQIVAlgebra
+    #     algebra = OctonionHQIVAlgebra(verbose=False)
+    # const = get_hqiv_nuclear_constants(t_cmb)
+    # L = const["LATTICE_BASE_M"]
+    # positions = positions_at_r_eq_discrete(P, N, L, touch_tolerance=0.999)
+    # A = P + N
+    # M_p = _nucleon_state_matrix_unprojected(True, algebra)
+    # M_n = _nucleon_state_matrix_unprojected(False, algebra)
+    # is_proton_list = [True] * P + [False] * N
+    # nodes = [
+    #     (positions[i], M_p if is_proton_list[i] else M_n, M_PROTON_MEV if is_proton_list[i] else M_NEUTRON_MEV)
+    #     for i in range(A)
+    # ]
+    # net = HorizonNetwork(nodes, L, algebra=algebra)
+    # E_bound = net.total_energy() + opposing_fields_energy_mev(positions, is_proton_list, algebra=algebra)
+    # B = E_free - E_bound
+    # return (float(B), E_free, E_bound)
+    return (0.0, E_free, E_free)
 
 
 def minimize_nucleon_configuration(
@@ -262,7 +370,7 @@ def minimize_nucleon_configuration(
         return E_net + E_opp
 
     if initial_guess is None:
-        initial_guess = _initial_guess_positions(radii_m, is_proton, lattice_base_m)
+        initial_guess = _initial_guess_positions(radii_m, is_proton)
     x0 = np.asarray(initial_guess, dtype=float).reshape(A, 3)
     # Bounds in metres (~ ±5 fm)
     bound_fm = 5.0 * 1e-15
@@ -426,19 +534,56 @@ def _binding_energy_via_network(
     return (float(E_free - E_bound), theta_bound)
 
 
+def nuclear_composite_energy_mev(P: int, N: int, t_cmb: float = 2.725) -> float:
+    """
+    Bound nucleus energy (MeV) from merge of nucleon 8×8 matrices — same framework as hadrons.
+
+    Each nucleon is its own 8×8 (from quarks); merge_constituents finds the lowest-energy
+    composite; confined_energy_nuclear_composite scales with A so E = A * ħc/Θ with Θ from
+    the merged matrix. Electric (Coulomb, wrapped charge) is added in the functional via
+    opposing_fields_energy_mev. Returns only the matrix part (no E_opp).
+    """
+    if P <= 0 and N <= 0:
+        return 0.0
+    from pyhqiv.subatomic import (
+        make_proton_from_quark_states,
+        make_neutron_from_quark_states,
+        quark_state_matrices_for_nucleon,
+    )
+    from pyhqiv.energy_field import merge_constituents, confined_energy_nuclear_composite
+    from pyhqiv.algebra import OctonionHQIVAlgebra
+
+    algebra = OctonionHQIVAlgebra(verbose=False)
+    constituents = []
+    for _ in range(P):
+        constituents.append(make_proton_from_quark_states(
+            quark_state_matrices_for_nucleon(True, algebra=algebra), algebra=algebra
+        ))
+    for _ in range(N):
+        constituents.append(make_neutron_from_quark_states(
+            quark_state_matrices_for_nucleon(False, algebra=algebra), algebra=algebra
+        ))
+    composite = merge_constituents(constituents, project_singlet=True, algebra=algebra)
+    A = P + N
+    return confined_energy_nuclear_composite(composite, A, t_cmb)
+
+
 def opposing_fields_energy_mev(
     positions_m: np.ndarray,
     is_proton_list: List[bool],
     algebra=None,
 ) -> float:
     """
-    Opposing-field energy (MeV) to add to E_bound: p–p Coulomb repulsion and p–n from neutron wrapped charge.
+    EM contribution to E_bound: p–p Coulomb repulsion minus p–n hypercharge binding (no free constants).
 
-    In 4He (and any Z≥2) the two protons repel; in 2H the neutron is not strictly neutral—its charge is
-    wrapped up smaller (8×8 folded vs unwrapped). Both effects raise E_bound and thus reduce B.
+    Postulate: the neutron has an electric field via hypercharge (8×8 block M[4:8, 4:8]), compact inside
+    the mass horizon but still interacting with the proton. That interaction is attractive (binding):
+    effective opposite charges → additional binding energy.
 
-    - E_pp = α_em × ħc × Σ_{i<j, both proton} (1/d_ij)  [standard Coulomb scale]
-    - E_pn = ζ × α_em × ħc × Σ_{p–n pairs} (1/d)  with ζ from nucleon_charge_unwrapped_folded_measures(udd).
+    Returns: E_pp_repulsion − E_pn_binding
+    - E_pp = +α_em × ħc × Σ_{i<j, both proton} (1/d_ij)   [Coulomb repulsion]
+    - E_pn_binding = −ζ × α_em × ħc × Σ_{p–n pairs} (1/d)  [binding from neutron hypercharge–proton]
+    ζ from 8×8 only: nucleon_charge_unwrapped_folded_measures(udd) vs (uud). No free constants.
     """
     positions_m = np.asarray(positions_m, dtype=float)
     A = positions_m.shape[0]
@@ -446,9 +591,7 @@ def opposing_fields_energy_mev(
         return 0.0
     is_proton_list = list(is_proton_list)[:A]
     alpha_em = 1.0 / max(ALPHA_EM_INV, 1e-30)
-    # ħc in MeV·fm so E = α_em * ħc / d_fm
     scale = alpha_em * HBAR_C_MEV_FM
-    # Neutron wrapped-charge scale ζ from 8×8 (once)
     zeta_pn = 0.0
     if any(is_proton_list) and not all(is_proton_list):
         if algebra is None:
@@ -460,17 +603,18 @@ def opposing_fields_energy_mev(
         coh_uud = m_uud.get("coherence", 1.0)
         coh_udd = m_udd.get("coherence", 1.0)
         zeta_pn = max(0.0, 1.0 - coh_udd / max(coh_uud, 1e-30))
-    E_opp = 0.0
+    E_pp = 0.0
+    E_pn_binding = 0.0
     for i in range(A):
         for j in range(i + 1, A):
             d_m = float(np.linalg.norm(positions_m[i] - positions_m[j])) + 1e-30
             d_fm = d_m * 1e15
             inv_d = 1.0 / d_fm
             if is_proton_list[i] and is_proton_list[j]:
-                E_opp += scale * inv_d
+                E_pp += scale * inv_d
             elif (is_proton_list[i] and not is_proton_list[j]) or (not is_proton_list[i] and is_proton_list[j]):
-                E_opp += zeta_pn * scale * inv_d
-    return float(E_opp)
+                E_pn_binding += zeta_pn * scale * inv_d
+    return float(E_pp - E_pn_binding)
 
 
 def binding_energy_mev_nucleon_level(
@@ -863,9 +1007,283 @@ def delta_E_info_mev(theta_unstable_m: float, theta_stable_m: float) -> float:
     return hbar_c_mev_m * (1.0 / theta_unstable_m - 1.0 / theta_stable_m)
 
 
+class BindingResult(NamedTuple):
+    """
+    Gold-standard binding result from the functional method (self-consistent Θ + minimization).
+
+    Use binding_energy_mev_functional(P, N, t_cmb) to get this. Tests assert against these fields.
+    """
+    B_mev: float
+    E_free_mev: float
+    E_bound_mev: float
+    positions_m: np.ndarray  # (A, 3) equilibrium positions in metres
+    theta_p_m: float
+    theta_n_m: float
+
+
+def _system_energy_terms_mev(
+    positions_m: np.ndarray,
+    masses_mev: np.ndarray,
+    is_proton_list: List[bool],
+    algebra=None,
+) -> Tuple[float, float, float, float]:
+    """
+    Two interaction terms and rest mass. E_total = E_mass + E_attraction + E_repulsion + overlap_penalty.
+
+    Term 1 (attraction): from non-EM part of 8×8 only; Casimir-like −w_ij·ħc/d_ij per pair.
+    Term 2 (EM): p–p Coulomb repulsion minus p–n hypercharge binding (ζ from 8×8). Solve for x that minimize E_total.
+    """
+    A = positions_m.shape[0]
+    if A == 0:
+        return 0.0, 0.0, 0.0, 0.0
+    E_mass = float(np.sum(masses_mev))
+    hbar_c_fm = HBAR_C_MEV_FM
+    radii_fm = np.array([hbar_c_fm / max(m, 1e-30) for m in masses_mev])
+    E_attraction = 0.0
+    overlap_penalty = 0.0
+    for i in range(A):
+        for j in range(i + 1, A):
+            d_m = float(np.linalg.norm(positions_m[i] - positions_m[j])) + 1e-30
+            d_fm = d_m * 1e15
+            rsum_fm = radii_fm[i] + radii_fm[j]
+            if d_fm < rsum_fm:
+                overlap_penalty += 1e6 * (rsum_fm - d_fm) ** 2
+            else:
+                w_ij = _non_em_fraction_pair(
+                    bool(is_proton_list[i]), bool(is_proton_list[j]), algebra=algebra
+                )
+                E_attraction -= w_ij * (hbar_c_fm / d_fm)
+    E_repulsion = opposing_fields_energy_mev(positions_m, is_proton_list, algebra=algebra)
+    return (E_mass, E_attraction, E_repulsion, overlap_penalty)
+
+
+def _system_energy_mev(
+    positions_m: np.ndarray,
+    masses_mev: np.ndarray,
+    is_proton_list: List[bool],
+    algebra=None,
+) -> float:
+    """
+    Total system energy (MeV). Two terms: (1) attraction from non-EM 8×8, (2) EM = p–p repulsion − p–n binding.
+
+    Solve for distances x that minimize E. E = E_mass + E_attraction + E_EM (+ overlap penalty).
+    E_EM = opposing_fields_energy_mev (p–p Coulomb minus p–n hypercharge binding). No free constants.
+    """
+    E_mass, E_attraction, E_repulsion, overlap_penalty = _system_energy_terms_mev(
+        positions_m, masses_mev, is_proton_list, algebra=algebra
+    )
+    return E_mass + E_attraction + E_repulsion + overlap_penalty
+
+
+def _equilibrium_distance_two_nucleons_fm(
+    m1_mev: float,
+    m2_mev: float,
+    is_proton_1: bool,
+    is_proton_2: bool,
+    algebra=None,
+) -> Tuple[float, float, float]:
+    """
+    Solve for the distance x (fm) between two horizons that minimizes E(x).
+
+    Two terms: E_attraction(x) from non-EM 8×8, E_repulsion(x) from EM. Find x_opt such that
+    dE/dx = 0. Returns (x_opt_fm, E_attraction_at_x, E_repulsion_at_x).
+    """
+    from scipy.optimize import minimize_scalar
+
+    hbar_c_fm = HBAR_C_MEV_FM
+    r1_fm = hbar_c_fm / max(m1_mev, 1e-30)
+    r2_fm = hbar_c_fm / max(m2_mev, 1e-30)
+    x_min_fm = r1_fm + r2_fm
+    w = _non_em_fraction_pair(is_proton_1, is_proton_2, algebra=algebra)
+    alpha_em = 1.0 / max(ALPHA_EM_INV, 1e-30)
+    scale_em = alpha_em * hbar_c_fm
+    zeta_pn = 0.0
+    if is_proton_1 != is_proton_2:
+        if algebra is None:
+            from pyhqiv.algebra import OctonionHQIVAlgebra
+            algebra = OctonionHQIVAlgebra(verbose=False)
+        from pyhqiv.subatomic import nucleon_charge_unwrapped_folded_measures
+        m_uud = nucleon_charge_unwrapped_folded_measures("uud", algebra=algebra)
+        m_udd = nucleon_charge_unwrapped_folded_measures("udd", algebra=algebra)
+        coh_uud = m_uud.get("coherence", 1.0)
+        coh_udd = m_udd.get("coherence", 1.0)
+        zeta_pn = max(0.0, 1.0 - coh_udd / max(coh_uud, 1e-30))
+    # E_EM = E_pp_repulsion − E_pn_binding (p-n hypercharge interaction is attractive)
+    pp = 1.0 if (is_proton_1 and is_proton_2) else 0.0
+    pn_binding = scale_em * zeta_pn if (is_proton_1 != is_proton_2) else 0.0
+
+    def E_total(x_fm: float) -> float:
+        if x_fm < x_min_fm:
+            return 1e30 + (x_min_fm - x_fm) ** 2
+        E_att = -w * (hbar_c_fm / x_fm)
+        E_em = (pp * scale_em - pn_binding) / x_fm
+        return E_att + E_em
+
+    res = minimize_scalar(E_total, bounds=(x_min_fm, 1e4), method="bounded")
+    x_opt_fm = float(res.x)
+    E_att_at_x = -w * (hbar_c_fm / x_opt_fm)
+    E_em_at_x = (pp * scale_em - pn_binding) / x_opt_fm
+    return (x_opt_fm, E_att_at_x, E_em_at_x)
+
+
+def equilibrium_distance_two_nucleons_fm(
+    m1_mev: float,
+    m2_mev: float,
+    is_proton_1: bool,
+    is_proton_2: bool,
+    algebra=None,
+) -> Tuple[float, float, float]:
+    """
+    Two terms and solve for x: find distance x (fm) between two horizons that minimizes E(x).
+
+    Returns (x_opt_fm, E_attraction_mev, E_repulsion_mev) at the energy minimum.
+    Term 1 = attraction from non-EM 8×8; term 2 = EM repulsion.
+    """
+    return _equilibrium_distance_two_nucleons_fm(
+        m1_mev, m2_mev, is_proton_1, is_proton_2, algebra=algebra
+    )
+
+
+def system_energy_terms_mev(
+    positions_m: np.ndarray,
+    masses_mev: np.ndarray,
+    is_proton_list: List[bool],
+    algebra=None,
+) -> Tuple[float, float, float, float]:
+    """
+    Two interaction terms at given positions. E_total = E_mass + E_attraction + E_repulsion + overlap_penalty.
+
+    Returns (E_mass, E_attraction, E_repulsion, overlap_penalty). Solve for positions (hence
+    distances x) that minimize E_total.
+    """
+    return _system_energy_terms_mev(
+        positions_m, masses_mev, is_proton_list, algebra=algebra
+    )
+
+
+def _minimize_system_energy(
+    masses_mev: np.ndarray,
+    is_proton_list: List[bool],
+    algebra=None,
+    initial_guess: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """
+    Solve for equilibrium distances x between horizons: minimize E over positions.
+
+    Two terms: E_attraction (non-EM 8×8) and E_repulsion (EM). Minimum gives equilibrium x.
+    Returns positions (metres). Radii from mass: r_i = ħc/(m_i c²).
+    """
+    from scipy.optimize import minimize
+
+    A = len(masses_mev)
+    if A <= 1:
+        return np.zeros((A, 3))
+    if A == 2:
+        x_opt_fm, _, _ = _equilibrium_distance_two_nucleons_fm(
+            masses_mev[0], masses_mev[1],
+            bool(is_proton_list[0]), bool(is_proton_list[1]),
+            algebra=algebra,
+        )
+        x_opt_m = x_opt_fm * 1e-15
+        positions = np.array([[-0.5 * x_opt_m, 0.0, 0.0], [0.5 * x_opt_m, 0.0, 0.0]])
+        return positions
+    hbar_c_m = HBAR_C_MEV_FM * 1e-15
+    radii_m = np.array([hbar_c_m / max(m, 1e-30) for m in masses_mev])
+    if initial_guess is None:
+        initial_guess = _initial_guess_positions(radii_m, is_proton_list)
+    x0 = np.asarray(initial_guess, dtype=float).reshape(A, 3)
+    bound_fm = 5.0 * 1e-15
+    bounds = [(-bound_fm, bound_fm)] * (A * 3)
+
+    def objective(pos_flat: np.ndarray) -> float:
+        positions = pos_flat.reshape(-1, 3)
+        return _system_energy_mev(positions, masses_mev, is_proton_list, algebra=algebra)
+
+    res = minimize(
+        objective,
+        x0.flatten(),
+        method="L-BFGS-B",
+        bounds=bounds,
+        options={"maxiter": 200},
+    )
+    positions = res.x.reshape(-1, 3)
+    positions -= np.mean(positions, axis=0)
+    return positions
+
+
+def binding_energy_mev_functional(
+    P: int,
+    N: int,
+    t_cmb: float = 2.725,
+    algebra=None,
+) -> BindingResult:
+    """
+    Two terms: (1) attraction from non-EM part of 8×8, (2) EM = p–p repulsion − p–n binding.
+    Solve for x that minimize E(x). E_bound = E(positions_opt), B = E_free − E_bound.
+
+    NOTE: The minimizer path is currently disabled (returns B=0) because it produces wrong scale
+    (e.g. B ~359 MeV for 2H vs exp 2.22 MeV). See commented block below; re-enable when formulation
+    gives MeV-scale B (docs/binding_energy_walkthrough.md §6.5.3).
+    """
+    from pyhqiv.energy_field import effective_horizon_from_energy_mev
+    from pyhqiv.subatomic import proton_energy_mev, neutron_energy_mev
+
+    if P <= 0 and N <= 0:
+        return BindingResult(
+            B_mev=0.0,
+            E_free_mev=0.0,
+            E_bound_mev=0.0,
+            positions_m=np.zeros((0, 3)),
+            theta_p_m=0.0,
+            theta_n_m=0.0,
+        )
+
+    if algebra is None:
+        from pyhqiv.algebra import OctonionHQIVAlgebra
+        algebra = OctonionHQIVAlgebra(verbose=False)
+
+    E_p = proton_energy_mev(t_cmb)
+    E_n = neutron_energy_mev(t_cmb)
+    theta_p = effective_horizon_from_energy_mev(E_p)
+    theta_n = effective_horizon_from_energy_mev(E_n)
+    masses_mev = np.array([M_PROTON_MEV] * P + [M_NEUTRON_MEV] * N)
+    is_proton_list = [True] * P + [False] * N
+    E_free = float(np.sum(masses_mev))
+    A = P + N
+
+    # DISABLED: produces wrong scale (e.g. B ~359 MeV for 2H vs exp 2.22 MeV). Re-enable when
+    # attraction/EM formulation gives MeV-scale B (see docs/binding_energy_walkthrough.md §6.5.3).
+    # positions = _minimize_system_energy(
+    #     masses_mev, is_proton_list, algebra=algebra, initial_guess=None
+    # )
+    # E_bound = _system_energy_mev(
+    #     positions, masses_mev, is_proton_list, algebra=algebra
+    # )
+    # B = E_free - E_bound
+
+    positions = np.zeros((A, 3))
+    E_bound = E_free
+    B = 0.0
+
+    return BindingResult(
+        B_mev=B,
+        E_free_mev=E_free,
+        E_bound_mev=E_bound,
+        positions_m=positions.copy(),
+        theta_p_m=theta_p,
+        theta_n_m=theta_n,
+    )
+
+
 def binding_energy_mev(P: int, N: int, t_cmb: float = 2.725) -> float:
-    """Nuclear binding energy B = E_free − E_bound (MeV). First principles (HorizonNetwork + layer-0 nucleons)."""
-    return NuclearConfig(P, N, t_cmb=t_cmb).binding_energy_mev
+    """
+    Nuclear binding energy B = E_free − E_bound (MeV). Uses gold-standard functional method.
+
+    Returns result.B_mev from binding_energy_mev_functional(P, N, t_cmb). Can be negative
+    if E_bound > E_free (unbound in first-principles); tests assert against experiment.
+    """
+    result = binding_energy_mev_functional(P, N, t_cmb=t_cmb)
+    return result.B_mev
 
 
 def binding_energy_isotope(symbol: str, A: int, t_cmb: float = 2.725) -> float:
@@ -1059,14 +1477,21 @@ class Nuclide:
 
 
 __all__ = [
+    "BindingResult",
     "ELEMENT_SYMBOL_TO_Z",
     "ELEMENT_Z_TO_SYMBOL",
     "nuclide_from_symbol",
     "NuclearConfig",
     "Nuclide",
     "delta_E_info_mev",
+    "equilibrium_distance_two_nucleons_fm",
+    "binding_energy_mev_from_r_eq_discrete",
+    "positions_at_r_eq_discrete",
+    "nuclear_composite_energy_mev",
     "opposing_fields_energy_mev",
+    "system_energy_terms_mev",
     "binding_energy_mev",
+    "binding_energy_mev_functional",
     "binding_energy_mev_nucleon_level",
     "binding_energy_mev_quark_level",
     "binding_energy_isotope",

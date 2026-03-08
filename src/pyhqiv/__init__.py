@@ -34,8 +34,10 @@ from pyhqiv import defects, molecular, semiconductors, waveguide
 from pyhqiv.algebra import OctonionHQIVAlgebra
 from pyhqiv.energy_field import (
     HQIVEnergyField,
+    confined_energy_from_composite,
     effective_horizon_from_energy_mev,
     merge_constituents,
+    total_energy_from_state_matrix,
 )
 from pyhqiv.ase_interface import (
     HQIVCalculator,
@@ -221,6 +223,8 @@ __all__ = [
     "HQIVEnergyField",
     "effective_horizon_from_energy_mev",
     "merge_constituents",
+    "total_energy_from_state_matrix",
+    "confined_energy_from_composite",
     "color_singlet_projector",
     "make_proton_from_quark_states",
     "SUBATOMIC_PDG_MEV",

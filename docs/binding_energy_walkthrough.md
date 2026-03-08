@@ -287,3 +287,47 @@ The same first-principles stack (hadrons → nucleons → nuclei) applies to **a
 - **Half-life:** `half_life_nuclide_hqiv(P, N)` from snap probability (E_info, φ, τ_tick).
 - **Decay chain:** `decay_chain_nuclide_hqiv(P, N, max_steps)` or `Nuclide('U-238').decay_chain()` (β±, α, fission).
 - **Coupling angles:** Subatomic 3-quark angles from `quark_binding_angles(flavor_content)`; nuclear geometry from HorizonNetwork overlap graph.
+
+### 6.5.3 Macroscopic effects: Pauli-like exclusion and discrete nucleons
+
+From the equations alone, the following **macroscopic effects** enforce Pauli-like exclusion and turn nucleons into **discrete computational objects**:
+
+1. **Hard-core repulsion (Pauli/horizon exclusion)**  
+   \(V_{\rm rep}(r) = A/r^{12}\) with \(A = \hbar c\,(r_1+r_2)^{11}\) from the algebra. So \(\Delta x \leq \Theta\) (causal-horizon bound) implies nucleons cannot overlap; each has a finite horizon radius \(r_i = \hbar c/(m_i c^2)\). They behave as **discrete** nodes (one per causal diamond at that scale).
+
+2. **Equilibrium separation r_eq**  
+   \(dV_{\rm eff}/dr = 0\) gives a unique **r_eq** (e.g. `equilibrium_separation_two_horizons(r1, r2, lattice_base_m)` → ~0.6–1.4 fm). So the dynamics do not allow arbitrary separation; the **allowed** separation is the one that balances exclusion and attraction. Nucleons are therefore **placed** at r_eq (discrete configuration).
+
+3. **Discrete combinatorics**  
+   - **μ = Σr_i / √(Σr_i²)** (sphere-touching): finite number of nodes, edges only when \(d < r_{\rm eq}(i,j)\). So the bound state is a **graph** (who touches whom), not a continuous field.  
+   - **discrete_mode_count(m)** on the lattice: 8×C(m+2,2) modes per shell. Same idea at nuclear scale: a finite number of “slots” (horizon modes) shared among nucleons when they touch.
+
+4. **8×8 and singlet projection**  
+   Each nucleon is one 8×8 (merged from three quarks); the algebra (g₂, triality) and singlet projection give a **finite-dimensional** state. So nucleons are discrete computational objects (one matrix per node).
+
+**Using this to get D and He-4 binding:**
+
+- **Geometry:** Use **r_eq** from the effective potential as the **enforced** pair distance (no free minimization over d). So for D: one pair at \(d = r_{\rm eq}(r_p, r_n)\); for He-4: four nucleons with pairwise distances set by r_eq (e.g. tetrahedron with edge = r_eq). That fixes the discrete configuration.
+- **Energy:** Either  
+  **(A)** Use the **same** \(V_{\rm eff}\) that defines r_eq: \(E_{\rm bound} = \sum_i m_i + \sum_{\rm pairs} V_{\rm eff}(r_{\rm eq})\); then \(B = E_{\rm free} - E_{\rm bound}\). Binding appears if \(V_{\rm eff}(r_{\rm eq}) < 0\) (well depth). In the current code \(V_{\rm eff}(r_{\rm eq})\) can be positive (shallow or no well); then the algebra may need a stronger attraction term to get MeV-scale B.  
+  **(B)** Use **mode sharing (μ > 1)** when nucleons are at r_eq: treat them as connected (e.g. \(d \leq r_{\rm eq}\) → edge), so \(\Theta_{\rm eff} = L\times 8\times \mu\) and \(E_{\rm bound}\) from the HorizonNetwork formula. B then comes from μ > 1 (shared modes) plus EM repulsion subtracted.
+
+So: **exclusion + r_eq** fix nucleons as discrete objects at a definite separation; **binding** is either the well depth of \(V_{\rm eff}\) at r_eq or the μ > 1 mode-sharing energy (HorizonNetwork), with EM reducing B.
+
+**API:** `positions_at_r_eq_discrete(P, N, lattice_base_m)` places nucleons at pairwise r_eq; `binding_energy_mev_from_r_eq_discrete(P, N)` returns (B, E_free, E_bound) using that geometry and HorizonNetwork + opposing_fields. Matching experiment (D ≈ 2.22 MeV, He-4 ≈ 28.3 MeV) may require option (A): a negative well depth from a stronger algebra-derived attraction in \(V_{\rm eff}\).
+
+### 6.5.4 Postulate: neutron has an electric field via hypercharge (compact but interacting)
+
+**Postulate:** The neutron has an electric field from hypercharge (8×8 block M[4:8, 4:8]). That field is **compact** and sits **inside** the mass horizon (so the neutron is neutral to leading order), but it **still interacts** with the proton's positive field. That interaction is **attractive** (effective opposite charges) and is an **additional source of binding energy**. No free constants: ζ from 8×8 only. The code uses `opposing_fields_energy_mev`: returns E_pp_repulsion − E_pn_binding, i.e. E_pp = +α ħc/d (Coulomb), E_pn_binding = −ζ × α ħc/d (binding), ζ from `nucleon_charge_unwrapped_folded_measures("udd")`.
+
+### 6.5.5 Postulate: deuteron (D) — subatomic uuuddd vs nucleon-level
+
+**Based solely on the HQIV maths (hierarchical layers, 8×8 at each scale):**
+
+- **Layer 0 (sub-nucleon):** Constituents → **one** bound system (proton or neutron). The subatomic solver (`confined_energy_mev(flavor_content)`) is defined for **single** confined states: one composite 8×8 from merging **that** layer’s constituents (e.g. 3 quarks → nucleon). It outputs one horizon scale and one rest energy.
+- **Layer 2 (nucleus):** Nucleus = bound system of **nucleons**. E_free = P×E_proton + N×E_neutron; E_nucleus = energy of P+N nucleons in the bound configuration (pairwise non-EM attraction + EM repulsion; solve for distances x). B = E_free − E_nucleus.
+
+The deuteron D is a **nucleus** (P=1, N=1). In the hierarchy it is not “one 6-quark bag” but “two nucleons in a bound state.” So:
+
+- **Postulate:** The subatomic solver is **not** the right tool to *model* D. It can *evaluate* `uuuddd` as a formal 6-quark merge (one composite, one horizon), but that treats D as a single layer-0–type object and yields one nucleon mass scale (when uuuddd is not in the PDG registry). It does not implement “two nucleons with two terms and equilibrium distance x.”
+- **Methodology to use:** The **first methodology** (nucleon-level): two horizons from nucleon masses, two terms (attraction from non-EM part of merge(nucleon_i, nucleon_j); repulsion from EM), solve for the distance x between horizons that minimizes E. That is the layer-2 prescription and is the one consistent with the HQIV hierarchy for D.

@@ -81,17 +81,16 @@ THETA_ANGSTROM_MAX: float = 10.0
 # Typical bond-length scale (Å) for consistency checks
 OH_BOND_ANGSTROM: float = 0.96
 
-# ---- Nuclear binding energy (MeV) experimental ----
-# He-4 total binding 28.30 MeV; C-12 ~92.16; O-16 ~127.62 (AME/NNDC)
+# ---- Nuclear binding energy (MeV) experimental (AME/NNDC) ----
+B_2H_MEV_EXP: float = 2.224  # deuteron
+B_2H_MEV_TOLERANCE: float = 0.5
 B_HE4_MEV_EXP: float = 28.30
 B_HE4_PER_NUCLEON_MEV_EXP: float = 7.075  # 28.30 / 4
+B_HE4_MEV_TOLERANCE: float = 3.5
+B_HE4_PER_NUCLEON_TOLERANCE: float = 0.9
 B_C12_MEV_EXP: float = 92.16
 B_O16_MEV_EXP: float = 127.62
-# Allow HQIV first-principles to sit within factor of experimental (order-of-magnitude check)
-B_TOLERANCE_FACTOR: float = 3.0
-# First-principles (sphere-touching μ, no tuning): accept geometric result; full mass-at-now narrows to 28.3
-B_HE4_MEV_TOLERANCE: float = 3.5   # He-4 total: 28.30 ± 3.5 MeV (geometry gives ~25)
-B_HE4_PER_NUCLEON_TOLERANCE: float = 0.9  # per nucleon 7.075 ± 0.9 MeV
+B_TOLERANCE_FACTOR: float = 3.0  # ballpark: exp/factor <= B <= exp*factor
 
 
 def test_speed_of_light_matches_CODATA():
@@ -307,59 +306,95 @@ def test_oxygen_ideal_valence_angle_in_bonding_angles():
 
 
 # ============== Nuclear binding energy (MeV) ==============
+#
+# Experiment (AME/NNDC): 2H ≈ 2.22 MeV, 4He ≈ 28.30 MeV, C-12 ≈ 92.16 MeV, O-16 ≈ 127.62 MeV.
+# Tests assert first-principles B = E_free − E_bound lies in these bands (no clamp).
 
 
-def test_he4_binding_energy_constant():
-    """First-principles He-4 binding energy matches experimental 28.3 MeV."""
-    be = binding_energy_mev(2, 2)
-    assert abs(be - B_HE4_MEV_EXP) <= B_HE4_MEV_TOLERANCE, (
-        f"First-principles He-4 B = {be:.3f} MeV; expected ~{B_HE4_MEV_EXP} MeV (±{B_HE4_MEV_TOLERANCE})"
+def test_deuteron_as_uuuddd_subatomic_solver():
+    """Formal 6-quark uuuddd via subatomic solver; compare to D. Hierarchy: D is layer-2 (two nucleons), not layer-0 (one 6q bag)—see walkthrough §6.5.3."""
+    from pyhqiv.constants import M_NEUTRON_MEV, M_PROTON_MEV
+    from pyhqiv.subatomic import confined_energy_mev
+
+    # D = 2H: experiment M_D = M_p + M_n - B_D
+    B_D_MEV = B_2H_MEV_EXP
+    M_D_MEV_EXP = M_PROTON_MEV + M_NEUTRON_MEV - B_D_MEV
+
+    # Subatomic solver: D as single 6-quark confined state uuuddd (3u + 3d)
+    E_uuuddd = confined_energy_mev("uuuddd")
+    E_uud = confined_energy_mev("uud")
+    E_udd = confined_energy_mev("udd")
+
+    assert np.isfinite(E_uuuddd) and E_uuuddd > 0, "uuuddd energy must be finite and positive"
+    # uuuddd is not in PDG registry, so solver uses L_base → one nucleon mass scale (~938 MeV)
+    assert 500 < E_uuuddd < 2500, "uuuddd on nucleon mass scale (500–2500 MeV)"
+    # Comparison: D experiment ~1875.6 MeV; p+n from solver ~1877.8 MeV
+    assert abs(E_uud - M_PROTON_MEV) < 0.01 and abs(E_udd - M_NEUTRON_MEV) < 0.01
+    # Document: E_uuuddd vs M_D (E_uuuddd currently ~half M_D because 6q uses L_base, not 2×nucleon)
+    assert E_uuuddd < E_uud + E_udd, "6-quark confined state energy vs free p+n"
+
+
+def test_binding_energy_returns_finite():
+    """binding_energy_mev returns finite B (no clamp; can be negative)."""
+    for P, N in [(1, 1), (2, 2), (6, 6), (8, 8)]:
+        be = binding_energy_mev(P, N)
+        assert np.isfinite(be), f"(P={P},N={N}): B = {be}"
+
+
+def test_2h_binding_matches_experiment():
+    """2H binding B in experimental band (2.224 ± 0.5 MeV)."""
+    be = binding_energy_mev(1, 1)
+    assert abs(be - B_2H_MEV_EXP) <= B_2H_MEV_TOLERANCE, (
+        f"2H B = {be:.3f} MeV; experiment {B_2H_MEV_EXP} ± {B_2H_MEV_TOLERANCE} MeV"
     )
 
 
-def test_he4_binding_energy_from_nuclear_config():
-    """He-4 binding energy B = E_free − E_bound should be ~28 MeV (experimental)."""
+def test_he4_binding_matches_experiment():
+    """4He binding B in experimental band (28.30 ± 3.5 MeV)."""
     be = binding_energy_mev(2, 2)
-    assert np.isfinite(be)
     assert abs(be - B_HE4_MEV_EXP) <= B_HE4_MEV_TOLERANCE, (
-        f"He-4 B = {be:.3f} MeV; expected ~{B_HE4_MEV_EXP} MeV (±{B_HE4_MEV_TOLERANCE})"
+        f"4He B = {be:.3f} MeV; experiment {B_HE4_MEV_EXP} ± {B_HE4_MEV_TOLERANCE} MeV"
     )
 
 
-def test_c12_binding_energy_ballpark():
-    """B = E_free − E_bound (unclamped). When > 0, in experimental ballpark (~92 MeV)."""
-    be = binding_energy_mev(6, 6)
-    assert np.isfinite(be)
-    if be > 0:
-        assert B_C12_MEV_EXP / B_TOLERANCE_FACTOR <= be <= B_C12_MEV_EXP * B_TOLERANCE_FACTOR
-
-
-def test_o16_binding_energy_ballpark():
-    """B = E_free − E_bound (unclamped). When > 0, in experimental ballpark (~128 MeV)."""
-    be = binding_energy_mev(8, 8)
-    assert np.isfinite(be)
-    if be > 0:
-        assert B_O16_MEV_EXP / B_TOLERANCE_FACTOR <= be <= B_O16_MEV_EXP * B_TOLERANCE_FACTOR
-
-
-def test_binding_energy_per_nucleon_ordering():
-    """When B > 0 for He-4, C-12, O-16, B/A trend is toward iron (experimental trend)."""
-    cfg_he4 = NuclearConfig(2, 2)
-    cfg_c12 = NuclearConfig(6, 6)
-    cfg_o16 = NuclearConfig(8, 8)
-    be_a_he4 = cfg_he4.binding_energy_mev / 4.0
-    be_a_c12 = cfg_c12.binding_energy_mev / 12.0
-    be_a_o16 = cfg_o16.binding_energy_mev / 16.0
-    if be_a_he4 <= 0 or be_a_c12 <= 0 or be_a_o16 <= 0:
-        pytest.skip("HQIV first-principles B is zero or negative for one or more; ordering test applies when B > 0")
-
-
-def test_he4_binding_energy_per_nucleon():
-    """He-4 binding energy per nucleon B/A should be ~7.07 MeV (28.3/4)."""
+def test_he4_binding_per_nucleon_matches_experiment():
+    """4He B/A in experimental band (~7.08 ± 0.9 MeV)."""
     be = binding_energy_mev(2, 2)
     be_per_a = be / 4.0
     assert abs(be_per_a - B_HE4_PER_NUCLEON_MEV_EXP) <= B_HE4_PER_NUCLEON_TOLERANCE, (
-        f"He-4 B/A = {be_per_a:.3f} MeV; expected ~{B_HE4_PER_NUCLEON_MEV_EXP} MeV (±{B_HE4_PER_NUCLEON_TOLERANCE})"
+        f"4He B/A = {be_per_a:.3f} MeV; experiment {B_HE4_PER_NUCLEON_MEV_EXP} ± {B_HE4_PER_NUCLEON_TOLERANCE} MeV"
+    )
+
+
+def test_c12_binding_in_experimental_ballpark():
+    """C-12 B in experimental ballpark (~92 MeV, within factor 3)."""
+    be = binding_energy_mev(6, 6)
+    assert B_C12_MEV_EXP / B_TOLERANCE_FACTOR <= be <= B_C12_MEV_EXP * B_TOLERANCE_FACTOR, (
+        f"C-12 B = {be:.3f} MeV; experiment ~{B_C12_MEV_EXP} MeV (×{B_TOLERANCE_FACTOR})"
+    )
+
+
+def test_o16_binding_in_experimental_ballpark():
+    """O-16 B in experimental ballpark (~128 MeV, within factor 3)."""
+    be = binding_energy_mev(8, 8)
+    assert B_O16_MEV_EXP / B_TOLERANCE_FACTOR <= be <= B_O16_MEV_EXP * B_TOLERANCE_FACTOR, (
+        f"O-16 B = {be:.3f} MeV; experiment ~{B_O16_MEV_EXP} MeV (×{B_TOLERANCE_FACTOR})"
+    )
+
+
+def test_binding_per_nucleon_ordering():
+    """B > 0 for 4He, C-12, O-16 and B/A increases (7.08 ≤ 7.68 ≤ 7.98 MeV trend)."""
+    b_he4 = binding_energy_mev(2, 2)
+    b_c12 = binding_energy_mev(6, 6)
+    b_o16 = binding_energy_mev(8, 8)
+    assert b_he4 > 0 and b_c12 > 0 and b_o16 > 0, (
+        f"Need positive B: 4He={b_he4:.3f}, C-12={b_c12:.3f}, O-16={b_o16:.3f}"
+    )
+    be_he4 = b_he4 / 4.0
+    be_c12 = b_c12 / 12.0
+    be_o16 = b_o16 / 16.0
+    assert be_he4 <= be_c12 <= be_o16, (
+        f"B/A: 4He={be_he4:.3f}, C-12={be_c12:.3f}, O-16={be_o16:.3f} (expect 7.08 ≤ 7.68 ≤ 7.98)"
     )
 
 

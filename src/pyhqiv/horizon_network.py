@@ -24,6 +24,7 @@ from typing import List, Optional, Set, Tuple, Union
 import numpy as np
 
 from pyhqiv.constants import C_SI, GAMMA, HBAR_C_MEV_FM, M_TRANS
+from pyhqiv.energy_field import effective_horizon_from_energy_mev
 from pyhqiv.lattice import DiscreteNullLattice
 from pyhqiv.subatomic import _sphere_touching_mu
 
@@ -36,9 +37,10 @@ _COULOMB_RELAX_SCALE: float = 0.001
 # Coherence length for trace term: multiple of pair contact scale (fm → m)
 _LAMBDA_COH_FACTOR: float = 2.0
 
-# Balanced well: connect when d < r_eq (min-energy state). r_eq ≈ scale * (r_i + r_j);
-# nucleon r_sum ~ 1.2 fm, alpha rms ~ 1.4 fm => scale = 1.4/1.2
-R_EQ_SCALE: float = 1.4 / 1.2
+# Equilibrium separation r_eq from effective potential (dV_eff/dr = 0); use
+# equilibrium_separation_two_horizons(r_i, r_j, lattice_base_m). No fixed scale constant.
+# (R_EQ_SCALE kept only for backward compatibility where explicit scale was used.)
+R_EQ_SCALE: float = 1.4 / 1.2  # deprecated: use equilibrium_separation_two_horizons
 
 
 def mean_field_mu(density_fm3: float, r_n: float = 1.2e-15) -> float:
@@ -298,9 +300,8 @@ class HorizonNetwork:
 
     def _build_overlap_graph(self) -> None:
         """
-        Edges where distance(i,j) < r_eq(i,j) (min-energy state / balanced well).
-        r_eq = R_EQ_SCALE * (r_i + r_j) so connectivity models the potential minimum,
-        not strict touch. Radii from mass: r = ħc/(m c²).
+        Edges where distance(i,j) < r_eq(i,j). r_eq from effective potential
+        (equilibrium_separation_two_horizons), not a fixed scale. Radii from mass: r = ħc/(m c²).
         """
         n = len(self.nodes)
         self._radii_m = [
@@ -315,7 +316,9 @@ class HorizonNetwork:
                     continue
                 pos_j = self.nodes[j][0]
                 d = float(np.linalg.norm(pos_i - pos_j))
-                r_eq_ij = R_EQ_SCALE * (self._radii_m[i] + self._radii_m[j])
+                r_eq_ij = equilibrium_separation_two_horizons(
+                    self._radii_m[i], self._radii_m[j], self.lattice_base_m
+                )
                 if d < r_eq_ij:
                     self.graph[i].append(j)
 
@@ -364,19 +367,20 @@ class HorizonNetwork:
 
     def effective_theta_for_index(self, index: int) -> float:
         """
-        Node-local horizon from the same overlap graph.
+        Node-local horizon: mass determines Θ_eff (self-consistent), then coupling μ.
 
-        Each nucleon inherits both the coherence of the full connected component and
-        the overlap valence of its immediate neighbourhood. The geometric mean avoids
-        double-counting while preserving the single-graph construction at every scale.
+        Θ_i = (ħc / m_i c²) × sqrt(μ_component × μ_local). Same X = x/Θ for quarks,
+        nucleons, nuclei. No L×1e-4 or other ad-hoc scale.
         """
         if index < 0 or index >= len(self.nodes):
             raise IndexError("node index out of range")
+        mass_mev = self.nodes[index][2]
+        theta_eff_i = effective_horizon_from_energy_mev(mass_mev)
         component = self._connected_component_from_index(index)
         component_mu = self._mu_for_indices(component)
         local_indices: Set[int] = {index, *self.graph[index]}
         local_mu = self._mu_for_indices(local_indices)
-        return self.lattice_base_m * 8.0 * math.sqrt(max(component_mu * local_mu, 1e-30))
+        return theta_eff_i * math.sqrt(max(component_mu * local_mu, 1e-30))
 
     def effective_theta_array(self) -> np.ndarray:
         """Per-node local horizons derived from the same overlap graph."""
@@ -397,11 +401,11 @@ class HorizonNetwork:
         return E_net_mev * (1.0 / (m_eff + 1.0)) * (N / m_trans)
 
     def total_energy(self) -> float:
-        """Paper axiom: E = Σ (mass_mev + ħc/Δx), Δx = Θ_local, minus lattice δE binding correction."""
+        """Paper axiom: E = Σ (mass_mev + ħc/Δx), Δx = Θ_local. Θ from mass (self-consistent) + coupling μ."""
         E = 0.0
-        for i, (pos, _, mass_mev) in enumerate(self.nodes):
-            theta = self.effective_theta_local(pos)
-            E += mass_mev + _HBAR_C_MEV_M / max(theta, 1e-30)
+        for i in range(len(self.nodes)):
+            theta_i = self.effective_theta_for_index(i)
+            E += self.nodes[i][2] + _HBAR_C_MEV_M / max(theta_i, 1e-30)
         E_net = float(E)
         correction = self._network_binding_correction_mev(E_net)
         return E_net - correction
