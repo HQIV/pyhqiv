@@ -70,6 +70,12 @@ jobs:
             echo "cert_ok=skipped" >> $GITHUB_OUTPUT
             exit 0
           fi
+          # PRs use packaged witnesses unless workflow_dispatch requests full cert.
+          if [ "${{ github.event_name }}" != "push" ] && [ "${{ github.event.inputs.full_lean_cert }}" != "true" ]; then
+            echo "::notice::Skipping heavy lake build on PR (use workflow_dispatch full_lean_cert=true to force)."
+            echo "cert_ok=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           cd "$LEAN_DIR"
           echo "Lake version: $(lake --version || true)"
           # Record start time for proof checking duration
