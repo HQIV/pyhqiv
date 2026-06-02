@@ -50,13 +50,14 @@ jobs:
           git clone --depth 1 https://github.com/HQIV/hqiv-lean.git _lean/hqiv-lean
           echo "lean_path=$(pwd)/_lean/hqiv-lean" >> $GITHUB_OUTPUT
 
-      - name: Install elan / lake (Lean toolchain)
-        if: steps.lean-co.outcome == 'success'
+      - name: Install elan / lake (Lean toolchain for hqiv-lean checkout)
+        if: steps.lean-co.outcome == 'success' && steps.lean-co.outputs.lean_path != ''
         uses: leanprover/lean-action@v1
         with:
           build: false
           test: false
-          # We will run lake manually below for the heavy target + export
+          lake-package-directory: _lean/hqiv-lean
+          # Full cert target runs manually below inside the Lean tree
 
       - name: Lean full certificate (HQIVSO8Closure + major theorems) — HARD GATE
         id: cert
