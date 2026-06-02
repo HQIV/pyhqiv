@@ -211,12 +211,6 @@ jobs:
           pytest tests/test_hqiv_arena.py tests/test_paper_numbers.py \
             -v --junit-xml=pytest-junit.xml
 
-      - name: Full pytest (informational; main suite may have known failures)
-        continue-on-error: true
-        run: |
-          pytest tests/ -v --cov=pyhqiv --cov-report=term-missing --cov-fail-under=0 \
-            2>&1 | tail -80 || true
-
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         with:
