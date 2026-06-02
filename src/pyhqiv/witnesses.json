@@ -1,0 +1,28 @@
+{
+  "referenceM": 4,
+  "derivedProtonMass_MeV": 938.272,
+  "m_now_electron_shell": 4,
+  "cosmic_birefringence_deg_now": 0.3,
+
+  "alpha_GUT": 0.023809523809523808,
+  "one_over_alpha_EM_at_MZ": 127.9,
+  "sin2thetaW_at_MZ": 0.23122,
+  "alpha_s_at_MZ": 0.118,
+
+  "M_Pl_GeV": 1.2209e19,
+  "M_Z_GeV": 91.1876,
+  "m_electron_MeV": 0.51099895,
+
+  "lepton_sector_multiplicity": 1.0,
+  "quark_sector_multiplicity": 3.0,
+  "neutrino_sector_multiplicity": 1.0,
+
+  "GEV_TO_EV": 1000000000.0,
+  "MEV_TO_EV": 1000000.0,
+
+  "resonance_k_tau_mu": 23.74186046511628,
+  "resonance_k_mu_e": 206.39495491537315,
+  "m_tau_from_resonance": 1.77686,
+  "m_mu_from_resonance": 0.07484080713096287
+}
+

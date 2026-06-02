@@ -50,12 +50,18 @@ Documentation = "https://github.com/disregardfiat/pyhqiv"
 Repository = "https://github.com/disregardfiat/pyhqiv"
 "Bug Tracker" = "https://github.com/disregardfiat/pyhqiv/issues"
 
+[project.scripts]
+hqiv-arena = "pyhqiv.arena_cli:main"
+
 [tool.setuptools_scm]
 write_to = "src/pyhqiv/_version.py"
 fallback_version = "0.4.0+unknown"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+pyhqiv = ["witnesses.json", "so8_generators.json", "arena/SKILL.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
