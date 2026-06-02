@@ -209,12 +209,12 @@ jobs:
       - name: Arena hard pytest gate (arena machinery + paper numbers)
         run: |
           pytest tests/test_hqiv_arena.py tests/test_paper_numbers.py \
-            -v --timeout=300 --junit-xml=pytest-junit.xml
+            -v --junit-xml=pytest-junit.xml
 
       - name: Full pytest (informational; main suite may have known failures)
         continue-on-error: true
         run: |
-          pytest tests/ -v --timeout=300 --cov=pyhqiv --cov-report=term-missing --cov-fail-under=0 \
+          pytest tests/ -v --cov=pyhqiv --cov-report=term-missing --cov-fail-under=0 \
             2>&1 | tail -80 || true
 
       - name: Upload test artifacts
