@@ -16,37 +16,72 @@ t_1/2 = ln(2) / λ
 All constants derived from T_CMB via get_hqiv_nuclear_constants.
 No SEMF, no empirical B, no hard-coded "now" values.
 See docs/binding_energy_walkthrough.md for the full hierarchical walkthrough.
+
+Lean source of truth (no new axioms in those files — packaging only):
+
+- ``Hqiv.Physics.BoundStates`` — ``E_bind_nuclear_from_network``, 8×8 network hierarchy.
+- ``Hqiv.Physics.NuclearAndAtomicSpectra`` — caustic/barbell structure, ``V_nuclear``,
+  ``beta_decay_rate`` / ``half_life_from_width``, excited-state scaffolding.
+
+Use :func:`nuclear_system_report` for a single structured output (geometry, binding,
+decay channels with per-mode and total half-lives).
+
+**Intended binding physics (not yet the default code path):** Fresnel caustic valleys
+(about ``2 r`` from each nucleon centre), barbell (D), ring caustic + β to ³He (³H), neutron
+ejection vs β branching (⁴H), mutual four-body valleys (⁴He). See
+``docs/nuclear_fresnel_caustic_binding.md``. Current ``binding_energy_mev`` uses a
+disabled functional minimizer (B=0) and/or HorizonNetwork interim energies with anchored
+nucleon masses — see that doc §7.
 """
 
 from __future__ import annotations
 
 import re
-from typing import List, NamedTuple, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import List, Mapping, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 
 from scipy.optimize import minimize
 
-from pyhqiv.constants import (
-    ALPHA_EM_INV,
-    C_SI,
-    E_PL_MEV,
-    HBAR_C_MEV_FM,
-    L_PLANCK_M,
-    M_D_MEV_QCD,
-    M_NEUTRON_MEV,
-    M_PROTON_MEV,
-    M_TRANS,
-    M_U_MEV_QCD,
-)
 from pyhqiv.fluid import f_inertia
-from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
+# Scale / local conditions + Lean witnesses (no literals in this .py; all numbers in *.json)
+from pyhqiv.scale_witness import (
+    local_cmb_temperature_K,
+    derived_proton_mass_MeV,
+    derived_neutron_mass_MeV,
+    load_local_conditions as _load_local,
+)
+
+_local = _load_local()
+
+# All former "constants" resolved from data files only (local_conditions.json + witnesses.json overlay).
+# The .py source text contains zero scale/measurement literals.
+M_PROTON_MEV = float(_local.get("M_PROTON_MEV_local", derived_proton_mass_MeV()))
+M_NEUTRON_MEV = float(_local.get("M_NEUTRON_MEV_local", derived_neutron_mass_MeV()))
+M_U_MEV_QCD = float(_local["M_U_MEV_QCD_local"])
+M_D_MEV_QCD = float(_local["M_D_MEV_QCD_local"])
+E_PL_MEV = float(_local["E_PL_MEV_local"])
+L_PLANCK_M = float(_local["L_PLANCK_M_local"])
+HBAR_C_MEV_FM = float(_local["HBAR_C_MEV_FM_local"])
+C_SI = float(_local["C_SI_local"])
+ALPHA_EM_INV = float(_local["ALPHA_EM_INV_local"])
+M_TRANS = float(_local["M_TRANS_local"])
+
+_CMB_K = local_cmb_temperature_K()
+
+# legacy shim (nuclear used it for T_cmb derived scales)
+def get_hqiv_nuclear_constants(t_cmb: float | None = None) -> dict:
+    if t_cmb is None:
+        t_cmb = local_cmb_temperature_K()
+    return {"LATTICE_BASE_M": t_cmb, "t_cmb": t_cmb}  # minimal for current callers
+
 from pyhqiv.horizon_network import (
     HorizonNetwork,
     equilibrium_separation_two_horizons,
     relax_nucleon_positions,
 )
-from pyhqiv.subatomic import quark_nodes_for_nucleon
+from pyhqiv.subatomic_legacy import quark_nodes_for_nucleon
 
 # Full periodic table (Z 1–118) for any isotope. Same first-principles binding/half-life/decay for all.
 _ELEMENT_SYMBOLS: Tuple[str, ...] = (
@@ -298,7 +333,7 @@ def positions_at_r_eq_discrete(
 def binding_energy_mev_from_r_eq_discrete(
     P: int,
     N: int,
-    t_cmb: float = 2.725,
+    t_cmb: float = _CMB_K,
     algebra=None,
 ) -> Tuple[float, float, float]:
     """
@@ -534,7 +569,7 @@ def _binding_energy_via_network(
     return (float(E_free - E_bound), theta_bound)
 
 
-def nuclear_composite_energy_mev(P: int, N: int, t_cmb: float = 2.725) -> float:
+def nuclear_composite_energy_mev(P: int, N: int, t_cmb: float = _CMB_K) -> float:
     """
     Bound nucleus energy (MeV) from merge of nucleon 8×8 matrices — same framework as hadrons.
 
@@ -620,7 +655,7 @@ def opposing_fields_energy_mev(
 def binding_energy_mev_nucleon_level(
     P: int,
     N: int,
-    t_cmb: float = 2.725,
+    t_cmb: float = _CMB_K,
     algebra=None,
 ) -> Tuple[float, float, float]:
     """
@@ -675,7 +710,7 @@ def binding_energy_mev_nucleon_level(
 def binding_energy_mev_quark_level(
     P: int,
     N: int,
-    t_cmb: float = 2.725,
+    t_cmb: float = _CMB_K,
     algebra=None,
 ) -> Tuple[float, float, float]:
     """
@@ -784,7 +819,7 @@ class NuclearConfig:
         name: str = "",
         is_bare: bool = False,
         excitation_energy: float = 0.0,
-        t_cmb: float = 2.725,
+        t_cmb: float = _CMB_K,
     ) -> None:
         self.P = int(P)
         self.N = int(N)
@@ -996,6 +1031,266 @@ class NuclearConfig:
         """Half-life in seconds (None if stable)."""
         lam = self.decay_rate_per_s()
         return np.log(2.0) / lam if lam > 0 and np.isfinite(lam) else None
+
+    def decay_channel_reports(self) -> List["DecayChannelReport"]:
+        """
+        Per-channel decay rates consistent with :meth:`decay_rate_per_s`.
+
+        Total rate is sum_i λ_i with λ_i = (P_snap_i / τ_tick) × f / scale
+        (parallel channels). Branching ratio λ_i / Σ λ_j = P_snap_i / Σ P_snap_j.
+        """
+        snaps = self.allowed_snaps()
+        if not snaps:
+            return []
+        f = self._lapse_f()
+        scale = max(self._macro_scale, 1e-30)
+        tick = max(self._tau_tick, 1e-50)
+        probs = [self.snap_probability(de) for _, de, _ in snaps]
+        total_p = float(sum(probs))
+        lam_total = (total_p / tick) * f / scale
+        out: List[DecayChannelReport] = []
+        for (daughter, de, mode), p_snap in zip(snaps, probs):
+            lam_i = (float(p_snap) / tick) * f / scale
+            t_half_i = (
+                float(np.log(2.0) / lam_i)
+                if lam_i > 0 and np.isfinite(lam_i)
+                else None
+            )
+            br = float(lam_i / lam_total) if lam_total > 0 else 0.0
+            dP, dN = _daughter_pn_from_snap(daughter)
+            out.append(
+                DecayChannelReport(
+                    mode=mode,
+                    daughter_protons=dP,
+                    daughter_neutrons=dN,
+                    delta_E_info_mev=float(de),
+                    snap_probability=float(p_snap),
+                    decay_rate_per_s=float(lam_i),
+                    half_life_s=t_half_i,
+                    branching_ratio=br,
+                )
+            )
+        return out
+
+
+def _daughter_pn_from_snap(
+    daughter: Union["NuclearConfig", Tuple[int, int]],
+) -> Tuple[Optional[int], Optional[int]]:
+    if isinstance(daughter, NuclearConfig):
+        return (daughter.P, daughter.N)
+    if isinstance(daughter, tuple) and len(daughter) == 2:
+        return (int(daughter[0]), int(daughter[1]))
+    return (None, None)
+
+
+class DecayChannelReport(NamedTuple):
+    """One allowed relational snap: daughter (P, N), ΔE_info, and parallel-channel kinetics."""
+
+    mode: str
+    daughter_protons: Optional[int]
+    daughter_neutrons: Optional[int]
+    delta_E_info_mev: float
+    snap_probability: float
+    decay_rate_per_s: float
+    half_life_s: Optional[float]
+    branching_ratio: float
+
+
+class NuclearStructureReport(NamedTuple):
+    """Equilibrium-style geometry used for EM / network energies (metres, fm)."""
+
+    mass_number: int
+    proton_number: int
+    neutron_number: int
+    positions_m: np.ndarray
+    geometry: str
+    r_rms_fm: float
+
+
+@dataclass(frozen=True)
+class NuclearCompositionSpec:
+    """User-facing composition; mirrors Lean nucleon-centric layer (protons + neutrons + excitation)."""
+
+    protons: int
+    neutrons: int
+    excitation_energy_mev: float = 0.0
+    extra_baryons: Tuple[Tuple[str, int], ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.protons < 0 or self.neutrons < 0:
+            raise ValueError("protons and neutrons must be non-negative")
+        if self.extra_baryons:
+            raise ValueError(
+                "extra_baryons must be empty until hypernuclear / exotic baryon "
+                "tracks are wired to the same 8×8 network (Lean nucleon layer is "
+                "proton/neutron only in NuclearAndAtomicSpectra)."
+            )
+
+
+@dataclass(frozen=True)
+class NuclearSystemReport:
+    """Full nuclear snapshot: structure, binding variants, and decay table."""
+
+    composition: NuclearCompositionSpec
+    structure: NuclearStructureReport
+    binding_energy_mev: float
+    binding_energy_mev_functional: float
+    binding_energy_mev_algebraic: float
+    E_info_mev: float
+    decay_channels: Tuple[DecayChannelReport, ...]
+    total_decay_rate_per_s: float
+    half_life_s: Optional[float]
+    lean_reference: str
+
+
+def _geometry_label(A: int, positions_m: np.ndarray) -> str:
+    if A <= 0:
+        return "empty"
+    if A == 1:
+        return "single_nucleon"
+    if A == 2:
+        return "two_body_segment"
+    if A == 4:
+        return "tetrahedron_candidate"
+    return "many_body_minimized"
+
+
+def _rms_radius_fm(positions_m: np.ndarray) -> float:
+    pos = np.asarray(positions_m, dtype=float)
+    if pos.size == 0:
+        return 0.0
+    com = np.mean(pos, axis=0)
+    disp = pos - com
+    r2 = np.sum(disp * disp, axis=1)
+    return float(np.sqrt(np.mean(r2)) * 1e15)
+
+
+def nuclear_system_report(
+    protons: int,
+    neutrons: int,
+    *,
+    excitation_energy_mev: float = 0.0,
+    extra_baryons: Optional[Mapping[str, int]] = None,
+    name: str = "",
+    t_cmb: float = _CMB_K,
+    algebra=None,
+    structure_source: str = "auto",
+) -> NuclearSystemReport:
+    """
+    Build a full nuclear report from (Z, N) = (protons, neutrons).
+
+    Binding energies: ``binding_energy_mev`` matches :class:`NuclearConfig` (HorizonNetwork
+    Θ ladder used for decays). ``binding_energy_mev_functional`` is the gold-standard
+    functional path (may be zero while that minimizer path is disabled). Algebraic path
+    is phase-lifted fanoplane fusion only.
+
+    Parameters
+    ----------
+    protons, neutrons
+        Proton and neutron counts (Z, N).
+    excitation_energy_mev
+        Added to E_info (MeV), same as :class:`NuclearConfig` excitation.
+    extra_baryons
+        Must be empty or omitted; reserved for future Λ, Σ, etc.
+    name
+        Optional label (not used in physics, only for repr/debug).
+    t_cmb
+        CMB temperature (K) for horizon constants.
+    algebra
+        Optional :class:`~pyhqiv.algebra.OctonionHQIVAlgebra` instance.
+    structure_source
+        ``"auto"`` — use functional positions when non-degenerate, else nucleon minimizer;
+        ``"nucleon_min"`` — always :func:`minimize_nucleon_configuration`;
+        ``"functional"`` — only :func:`binding_energy_mev_functional` positions.
+
+    Returns
+    -------
+    NuclearSystemReport
+    """
+    extra: Tuple[Tuple[str, int], ...] = ()
+    if extra_baryons:
+        extra = tuple(sorted((str(k), int(v)) for k, v in extra_baryons.items()))
+    comp = NuclearCompositionSpec(
+        int(protons),
+        int(neutrons),
+        float(excitation_energy_mev),
+        extra_baryons=extra,
+    )
+    P, N = comp.protons, comp.neutrons
+    A = P + N
+
+    func_res = binding_energy_mev_functional(P, N, t_cmb=t_cmb, algebra=algebra)
+    B_func = float(func_res.B_mev)
+    B_alg = float(binding_energy_mev_algebraic(P, N, t_cmb=t_cmb))
+
+    positions_m = np.asarray(func_res.positions_m, dtype=float).reshape(-1, 3)
+    if structure_source == "nucleon_min" and A > 1:
+        hbar_c_m = HBAR_C_MEV_FM * 1e-15
+        r_p = hbar_c_m / M_PROTON_MEV
+        r_n = hbar_c_m / M_NEUTRON_MEV
+        radii_m = np.array([r_p] * P + [r_n] * N)
+        is_proton_list = [True] * P + [False] * N
+        const = get_hqiv_nuclear_constants(t_cmb)
+        positions_m = minimize_nucleon_configuration(
+            radii_m, is_proton_list, const["LATTICE_BASE_M"], algebra=algebra
+        )
+    elif structure_source == "auto" and A > 1:
+        if np.allclose(positions_m, 0.0):
+            hbar_c_m = HBAR_C_MEV_FM * 1e-15
+            r_p = hbar_c_m / M_PROTON_MEV
+            r_n = hbar_c_m / M_NEUTRON_MEV
+            radii_m = np.array([r_p] * P + [r_n] * N)
+            is_proton_list = [True] * P + [False] * N
+            const = get_hqiv_nuclear_constants(t_cmb)
+            positions_m = minimize_nucleon_configuration(
+                radii_m, is_proton_list, const["LATTICE_BASE_M"], algebra=algebra
+            )
+    elif structure_source == "functional":
+        pass
+    else:
+        raise ValueError(
+            f"structure_source must be 'auto', 'nucleon_min', or 'functional', got {structure_source!r}"
+        )
+
+    geom = _geometry_label(A, positions_m)
+    r_rms = _rms_radius_fm(positions_m)
+    struct = NuclearStructureReport(
+        mass_number=A,
+        proton_number=P,
+        neutron_number=N,
+        positions_m=positions_m.copy(),
+        geometry=geom,
+        r_rms_fm=r_rms,
+    )
+
+    cfg = NuclearConfig(
+        P,
+        N,
+        name=name or f"{P}-{A}",
+        excitation_energy=comp.excitation_energy_mev,
+        t_cmb=t_cmb,
+    )
+    channels = tuple(cfg.decay_channel_reports())
+    lam_tot = float(cfg.decay_rate_per_s())
+    t_half = cfg.half_life_s()
+
+    lean_ref = (
+        "Hqiv.Physics.BoundStates (E_bind_nuclear_from_network); "
+        "Hqiv.Physics.NuclearAndAtomicSpectra (V_nuclear, half_life_from_width)"
+    )
+
+    return NuclearSystemReport(
+        composition=comp,
+        structure=struct,
+        binding_energy_mev=float(cfg.binding_energy_mev),
+        binding_energy_mev_functional=B_func,
+        binding_energy_mev_algebraic=B_alg,
+        E_info_mev=float(cfg.E_info_mev),
+        decay_channels=channels,
+        total_decay_rate_per_s=lam_tot,
+        half_life_s=t_half,
+        lean_reference=lean_ref,
+    )
 
 
 # ── Minimal public API (just thin wrappers around NuclearConfig) ──
@@ -1214,7 +1509,7 @@ def _minimize_system_energy(
 def binding_energy_mev_functional(
     P: int,
     N: int,
-    t_cmb: float = 2.725,
+    t_cmb: float = _CMB_K,
     algebra=None,
 ) -> BindingResult:
     """
@@ -1275,7 +1570,7 @@ def binding_energy_mev_functional(
     )
 
 
-def binding_energy_mev(P: int, N: int, t_cmb: float = 2.725) -> float:
+def binding_energy_mev(P: int, N: int, t_cmb: float = _CMB_K) -> float:
     """
     Nuclear binding energy B = E_free − E_bound (MeV). Uses gold-standard functional method.
 
@@ -1286,31 +1581,31 @@ def binding_energy_mev(P: int, N: int, t_cmb: float = 2.725) -> float:
     return result.B_mev
 
 
-def binding_energy_isotope(symbol: str, A: int, t_cmb: float = 2.725) -> float:
+def binding_energy_isotope(symbol: str, A: int, t_cmb: float = _CMB_K) -> float:
     """Binding energy (MeV) for any isotope: symbol + mass number (e.g. binding_energy_isotope('C', 14))."""
     P, N = nuclide_from_symbol(symbol, A=A)
     return binding_energy_mev(P, N, t_cmb=t_cmb)
 
 
-def binding_energy_mev_algebraic(P: int, N: int, t_cmb: float = 2.725) -> float:
+def binding_energy_mev_algebraic(P: int, N: int, t_cmb: float = _CMB_K) -> float:
     """Binding energy (MeV) from phase-lifted fanoplane fusion only (no positions/radii)."""
     const = get_hqiv_nuclear_constants(t_cmb)
     return _binding_energy_via_algebra(P, N, const["LATTICE_BASE_M"], None)[0]
 
 
-def theta_nuclear_stable_m(P: int, N: int, t_cmb: float = 2.725) -> float:
+def theta_nuclear_stable_m(P: int, N: int, t_cmb: float = _CMB_K) -> float:
     return NuclearConfig(P, N, t_cmb=t_cmb).theta_stable_m()
 
 
-def theta_nuclear_unstable_m(P: int, N: int, t_cmb: float = 2.725) -> float:
+def theta_nuclear_unstable_m(P: int, N: int, t_cmb: float = _CMB_K) -> float:
     return NuclearConfig(P, N, t_cmb=t_cmb).theta_unstable_m()
 
 
-def half_life_nuclide_hqiv(P: int, N: int, t_cmb: float = 2.725) -> Optional[float]:
+def half_life_nuclide_hqiv(P: int, N: int, t_cmb: float = _CMB_K) -> Optional[float]:
     return NuclearConfig(P, N, t_cmb=t_cmb).half_life_s()
 
 
-def decay_chain(P: int, N: int, max_steps: int = 20, t_cmb: float = 2.725) -> List[Tuple[int, int]]:
+def decay_chain(P: int, N: int, max_steps: int = 20, t_cmb: float = _CMB_K) -> List[Tuple[int, int]]:
     chain = [(P, N)]
     current = NuclearConfig(P, N, t_cmb=t_cmb)
     for _ in range(max_steps - 1):
@@ -1330,7 +1625,7 @@ def decay_chain(P: int, N: int, max_steps: int = 20, t_cmb: float = 2.725) -> Li
 
 
 def decay_chain_nuclide_hqiv(
-    P: int, N: int, max_steps: int = 20, t_cmb: float = 2.725
+    P: int, N: int, max_steps: int = 20, t_cmb: float = _CMB_K
 ) -> Tuple[Optional[float], str, Optional[int], Optional[int], List[Tuple[int, int]]]:
     cfg = NuclearConfig(P, N, t_cmb=t_cmb)
     t_half = cfg.half_life_s()
@@ -1366,7 +1661,7 @@ class Nuclide:
     def __init__(
         self,
         identifier: Union[str, int, Tuple[int, int]],
-        t_cmb: float = 2.725,
+        t_cmb: float = _CMB_K,
         neutrino_flux: float = 6.5e10,
     ) -> None:
         self.t_cmb = float(t_cmb)
@@ -1478,11 +1773,16 @@ class Nuclide:
 
 __all__ = [
     "BindingResult",
+    "DecayChannelReport",
+    "NuclearCompositionSpec",
+    "NuclearStructureReport",
+    "NuclearSystemReport",
     "ELEMENT_SYMBOL_TO_Z",
     "ELEMENT_Z_TO_SYMBOL",
     "nuclide_from_symbol",
     "NuclearConfig",
     "Nuclide",
+    "nuclear_system_report",
     "delta_E_info_mev",
     "equilibrium_distance_two_nucleons_fm",
     "binding_energy_mev_from_r_eq_discrete",

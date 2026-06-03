@@ -1,0 +1,425 @@
+name: HQIV Arena (CI-driven benchmark & improvement platform)
+
+on:
+  push:
+    branches: [main, master, arena/*, feat/*, benchmark/*, contrib/*, '*']
+  pull_request:
+    branches: [main, master, arena/*, feat/*, benchmark/*, contrib/*, '*']
+  workflow_dispatch:
+    inputs:
+      full_lean_cert:
+        description: "Force full Lean certificate gate (lake build HQIVSO8Closure + heavy targets)"
+        required: false
+        default: "false"
+        type: boolean
+
+# Required for gh CLI, PR comments, and potential leaderboard commits on main
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+
+env:
+  # Tolerances etc are inside the scripts; these are high-level knobs.
+  ARENA_RESULTS: arena_results.json
+  ALIGNMENT_RESULTS: alignment_results.json
+  LEADERBOARD: arena/leaderboard.json
+
+jobs:
+  # ============================================
+  # Stage 1: Lean Certificate Gate (HARD)
+  # ============================================
+  lean-certificate:
+    runs-on: ubuntu-latest
+    # This job checks out the Lean side (trying to match branch for experimental work)
+    steps:
+      - name: Checkout pyhqiv (this repo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Try to checkout matching Lean branch (HQIV/hqiv-lean) for experimental alignment
+        id: lean-co
+        continue-on-error: true
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-main}}"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          mkdir -p _lean
+          git clone --depth 1 --branch "$BRANCH" https://github.com/HQIV/hqiv-lean.git _lean/hqiv-lean || \
+          git clone --depth 1 https://github.com/HQIV/hqiv-lean.git _lean/hqiv-lean
+          echo "lean_path=$(pwd)/_lean/hqiv-lean" >> $GITHUB_OUTPUT
+
+      - name: Install elan / lake (Lean toolchain)
+        if: steps.lean-co.outcome == 'success'
+        uses: leanprover/lean-action@v1
+        with:
+          build: false
+          test: false
+          # We will run lake manually below for the heavy target + export
+
+      - name: Lean full certificate (HQIVSO8Closure + major theorems) — HARD GATE
+        id: cert
+        continue-on-error: ${{ github.event.inputs.full_lean_cert != 'true' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
+        run: |
+          set -euo pipefail
+          LEAN_DIR="${{ steps.lean-co.outputs.lean_path || '' }}"
+          if [ -z "$LEAN_DIR" ] || [ ! -d "$LEAN_DIR" ]; then
+            echo "::warning::No Lean checkout; skipping live cert (alignment will use committed witnesses). For full arena on Lean changes, push coordinated branches."
+            echo "cert_ok=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          cd "$LEAN_DIR"
+          echo "Lake version: $(lake --version || true)"
+          # Record start time for proof checking duration
+          START=$(date +%s)
+          # The "full certified" target that includes SO(8) closure, triality, GR+SM unification etc.
+          # Using HQIVSO8Closure as the heavy pack (per lakefile.toml comments).
+          lake build HQIVSO8Closure 2>&1 | tail -100 || {
+            echo "::error::Full Lean certificate (HQIVSO8Closure) FAILED. No branch may score without a green full lake build on the formal theorems."
+            exit 1
+          }
+          END=$(date +%s)
+          DURATION=$((END - START))
+          echo "cert_ok=true" >> $GITHUB_OUTPUT
+          echo "proof_time_s=$DURATION" >> $GITHUB_OUTPUT
+          echo "Lean full cert OK in ${DURATION}s"
+
+      - name: Export fresh Lean witnesses (for alignment gate)
+        if: steps.cert.outputs.cert_ok == 'true' || steps.cert.outputs.cert_ok == 'skipped'
+        run: |
+          LEAN_DIR="${{ steps.lean-co.outputs.lean_path || '' }}"
+          if [ -n "$LEAN_DIR" ] && [ -f "$LEAN_DIR/scripts/regenerate_hqiv_witnesses.sh" ]; then
+            (cd "$LEAN_DIR" && lake env lean -q --run scripts/export_witnesses.lean || true)
+            # Also try an arena-specific export if present (future extension)
+            (cd "$LEAN_DIR" && lake env lean -q --run scripts/export_arena_alignment.lean || true)
+            echo "Exported witnesses from Lean"
+          fi
+
+      - name: Upload Lean cert artifact (time + status)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lean-cert-${{ github.run_id }}
+          path: |
+            ${{ steps.lean-co.outputs.lean_path || '.' }}/data/hqiv_witnesses.json
+          retention-days: 7
+
+  # ============================================
+  # Stage 2: Lean ↔ Python Alignment Gate (HARD)
+  # ============================================
+  alignment:
+    needs: lean-certificate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pyhqiv (with dev extras for tests)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[jax,cosmology,dev]"
+          pip install -e .
+
+      - name: Download Lean witnesses (if produced in stage 1)
+        uses: actions/download-artifact@v4
+        with:
+          name: lean-cert-${{ github.run_id }}
+          path: _lean_artifacts
+        continue-on-error: true
+
+      - name: Run Lean ↔ Python Alignment Gate
+        id: align
+        run: |
+          set -euo pipefail
+          # If stage1 left fresh witnesses, make them visible to the overlay loader
+          if [ -f _lean_artifacts/hqiv_witnesses.json ]; then
+            mkdir -p data
+            cp _lean_artifacts/hqiv_witnesses.json data/hqiv_witnesses.json || true
+            echo "Using fresh Lean witnesses for alignment"
+          fi
+
+          python3 scripts/validate_hqiv_alignment.py \
+            --verbose \
+            --json-out ${{ env.ALIGNMENT_RESULTS }} \
+            --lean-root _lean_artifacts || \
+            python3 scripts/validate_hqiv_alignment.py \
+            --verbose \
+            --json-out ${{ env.ALIGNMENT_RESULTS }}
+
+      - name: Upload alignment report
+        uses: actions/upload-artifact@v4
+        with:
+          name: alignment-${{ github.run_id }}
+          path: ${{ env.ALIGNMENT_RESULTS }}
+          retention-days: 30
+
+      - name: Fail if alignment broken (HARD gate)
+        run: |
+          python3 -c '
+          import json, sys
+          data = json.load(open("${{ env.ALIGNMENT_RESULTS }}"))
+          if not data.get("passed"):
+              print("ALIGNMENT GATE FAILED")
+              sys.exit(1)
+          print("Alignment gate PASSED")
+          '
+
+  # ============================================
+  # Stage 3: Python Test Gate (HARD)
+  # ============================================
+  python-tests:
+    needs: alignment
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[jax,cosmology,dev]"
+          pip install pytest pytest-cov
+
+      - name: Ruff lint (fast feedback)
+        run: ruff check src tests scripts || true
+
+      - name: Full pytest (including paper validation, reproducibility, lean-backed tests)
+        run: |
+          pytest tests/ -v --cov=pyhqiv --cov-report=term-missing --cov-fail-under=0 \
+            --junit-xml=pytest-junit.xml 2>&1 | tail -80
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.python-version }}-${{ github.run_id }}
+          path: |
+            pytest-junit.xml
+            htmlcov/
+          retention-days: 7
+
+  # ============================================
+  # Stage 4: Scoring & Evaluation (only if 1-3 green)
+  # ============================================
+  scoring:
+    needs: [lean-certificate, alignment, python-tests]
+    if: always() && (needs.alignment.result == 'success' && needs.python-tests.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Download baseline (current main's last successful arena results)
+        # For simplicity we keep a committed baseline in arena/baseline.json on main.
+        # On branches we compare against it; on main we will update it after merge.
+        run: |
+          curl -fsSL -o arena/baseline.json \
+            "https://raw.githubusercontent.com/disregardfiat/pyhqiv/main/arena/baseline.json" || \
+            echo '{"overall_score": 1000, "metrics": []}' > arena/baseline.json
+          mkdir -p arena
+
+      - name: Compute Arena Score (sigma everywhere)
+        id: score
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 scripts/arena/compute_score.py \
+            --out ${{ env.ARENA_RESULTS }} \
+            --baseline arena/baseline.json \
+            --git-sha "$GITHUB_SHA" \
+            --git-ref "$GITHUB_REF_NAME" \
+            --print-badges
+
+      - name: Upload scoring results
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-score-${{ github.run_id }}
+          path: ${{ env.ARENA_RESULTS }}
+          retention-days: 90
+
+      - name: Post score summary as PR comment (or commit status)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use gh to post a nice comment
+          python3 - << 'PY'
+          import json, os, subprocess, sys
+          res = json.load(open("${{ env.ARENA_RESULTS }}"))
+          summary = {
+            "overall": res.get("overall_score"),
+            "sigma": res.get("sigma_weighted"),
+            "regressions": res.get("num_regressed_protected"),
+            "improved": sum(1 for d in res.get("deltas", {}).values() if d > 0),
+          }
+          body = f"""## HQIV Arena — Score Report (branch)
+
+          **Overall Score**: `{summary['overall']}`
+          **Weighted σ (lower better)**: `{summary['sigma']}`
+          **Protected regressions**: `{summary['regressions']}` (must be 0 to be eligible for merge)
+          **Improved metrics vs baseline**: `{summary['improved']}`
+
+          Full results artifact: `arena-score-${{ github.run_id }}` → `arena_results.json`
+
+          *Sigma everywhere*: broad error reduction across observables is rewarded. Single-metric gaming is discouraged.
+          See [CONTRIBUTING.md](https://github.com/disregardfiat/pyhqiv/blob/main/CONTRIBUTING.md#hqiv-arena) for details.
+          """
+          pr = os.environ.get("PR_NUMBER") or "${{ github.event.number }}"
+          if pr and pr != "null":
+              subprocess.run(["gh", "pr", "comment", pr, "--body", body], check=False)
+          print("Posted comment (or would have).")
+          PY
+
+  # ============================================
+  # Stage 5: Leaderboard & Badges Update (main only, after merge)
+  # ============================================
+  leaderboard:
+    needs: scoring
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Download latest score artifact from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: arena-score-${{ github.run_id }}
+          path: _arena_artifact
+
+      - name: Update leaderboard + award badges (only on successful main merge)
+        run: |
+          python3 - << 'PY'
+          import json, os, shutil, subprocess, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          # Load the just-computed results
+          res_path = Path("_arena_artifact") / "arena_results.json"
+          if not res_path.exists():
+              # fallback to the one written in scoring step
+              res_path = Path("arena_results.json")
+          data = json.load(open(res_path))
+
+          lb_path = Path("arena/leaderboard.json")
+          lb = {"entries": [], "current_best": None, "history": [], "badges": {}}
+          if lb_path.exists():
+              lb = json.load(open(lb_path))
+
+          entry = {
+              "branch": os.environ.get("GITHUB_REF_NAME", "main"),
+              "sha": os.environ.get("GITHUB_SHA", ""),
+              "author": os.environ.get("GITHUB_ACTOR", "unknown"),
+              "score": data.get("overall_score"),
+              "sigma_weighted": data.get("sigma_weighted"),
+              "timestamp": data.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+              "metrics": {m["name"]: m for m in data.get("metrics", [])},
+              "regressions": data.get("num_regressed_protected", 0),
+          }
+
+          # Simple badge award on merge (the compute script also prints provisional)
+          # We call the library here for full history-aware awarding.
+          sys.path.insert(0, "src")
+          from pyhqiv.arena.badges import award_badges  # type: ignore
+
+          # Crude history stats
+          prev_best_score = (lb.get("current_best") or {}).get("score", 0) or 0
+          is_new_best = (entry["score"] or 0) >= prev_best_score
+          time_at_top = 1 if is_new_best else 0
+
+          badges = award_badges(
+              is_merge_to_main=True,
+              sigma_improved=(entry.get("sigma_weighted", 1.0) <= (lb.get("current_best") or {}).get("sigma_weighted", 1.0)),
+              num_regressed_protected=entry.get("regressions", 0),
+              new_tests_added=0,  # could be enriched by scanning diff
+              rank=1 if is_new_best else 2,
+              time_at_top=time_at_top,
+              lean_cert_successes=1,
+          )
+          entry["badges"] = badges
+
+          # Append / update
+          lb["entries"] = [e for e in lb.get("entries", []) if e.get("sha") != entry["sha"]]
+          lb["entries"].append(entry)
+          # Keep last 50
+          lb["entries"] = lb["entries"][-50:]
+
+          if is_new_best or not lb.get("current_best"):
+              lb["current_best"] = entry
+
+          lb["history"].append({"ts": entry["timestamp"], "score": entry["score"], "sigma": entry.get("sigma_weighted")})
+          lb["history"] = lb["history"][-200:]
+
+          lb_path.parent.mkdir(parents=True, exist_ok=True)
+          json.dump(lb, open(lb_path, "w"), indent=2, sort_keys=True)
+          print("Updated", lb_path)
+
+          # Also update a simple baseline for future branch comparisons
+          baseline = {"overall_score": entry["score"], "metrics": data.get("metrics", [])}
+          json.dump(baseline, open("arena/baseline.json", "w"), indent=2)
+          print("Updated arena/baseline.json")
+
+          # Commit back (best-effort; requires contents:write)
+          subprocess.run(["git", "config", "user.name", "hqiv-arena-bot"], check=False)
+          subprocess.run(["git", "config", "user.email", "arena@disregardfiat.tech"], check=False)
+          subprocess.run(["git", "add", "arena/leaderboard.json", "arena/baseline.json"], check=False)
+          subprocess.run(["git", "commit", "-m", f"arena: update leaderboard after merge {entry['sha'][:8]} [skip ci]"], check=False)
+          subprocess.run(["git", "push"], check=False)
+          print("Leaderboard push attempted (may be no-op on protected main).")
+          PY
+
+      - name: Upload final leaderboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaderboard-${{ github.run_id }}
+          path: arena/leaderboard.json
+          retention-days: 365
+
+  # Keep docs generation working (Alectryon / docgen) on successful main builds
+  docs:
+    needs: [scoring]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Note (real docgen lives in hqiv-lean repo)
+        run: |
+          echo "Alectryon / Verso / docgen-action runs in the hqiv-lean repository."
+          echo "This job is a placeholder to keep the contract explicit in the Arena workflow."

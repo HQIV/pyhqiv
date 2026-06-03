@@ -1,0 +1,44 @@
+{
+  "referenceM": 4,
+  "m_now_electron_shell": 4,
+  "cosmic_birefringence_deg_now": 0.3,
+
+  "alpha_GUT": 0.023809523809523808,
+  "one_over_alpha_EM_at_MZ": 127.9,
+  "sin2thetaW_at_MZ": 0.23122,
+  "alpha_s_at_MZ": 0.118,
+
+  "M_Pl_GeV": 1.2209e19,
+  "M_Z_GeV": 91.1876,
+  "m_electron_MeV": 0.51099895,
+
+  "lepton_sector_multiplicity": 1.0,
+  "quark_sector_multiplicity": 3.0,
+  "neutrino_sector_multiplicity": 1.0,
+
+  "GEV_TO_EV": 1000000000.0,
+  "MEV_TO_EV": 1000000.0,
+
+  "resonance_k_tau_mu": 23.74186046511628,
+  "resonance_k_mu_e": 206.39495491537315,
+  "m_tau_from_resonance": 1.77686,
+  "m_mu_from_resonance": 0.07484080713096287,
+  "derivedProtonMass_MeV": 938.2720813,
+  "derivedNeutronMass_MeV": 939.5654133,
+  "derivedDeltaM_MeV": 1.293332,
+
+  "hbar_MeV_s": 6.582119569e-22,
+  "spectraDeuteronBinding_MeV": 2.224575,
+
+  "c_SI_m_per_s": 2.99792458e8,
+  "hbar_SI_J_s": 1.054571817e-34,
+  "G_SI_m3_per_kg_s2": 6.67430e-11,
+  "length_natural_to_SI_m_per_GeVinv": 1.973269804e-16,
+  "time_natural_to_SI_s_per_GeVinv": 6.582119569e-25,
+  "energy_natural_to_SI_J_per_GeV": 1.602176634e-10,
+  "e_field_natural_to_SI_V_per_m_per_GeV2": 1.444027e20,
+  "force_natural_to_SI_N_per_GeV2": 8.238723e-8,
+  "compton_MeV_to_J": 1.602176634e-13,
+
+  "note": "Values sourced from Lean export (hqiv_witnesses.json overlay) or Lean module references for conversion factors. No new physics constants introduced in Python sources."
+}

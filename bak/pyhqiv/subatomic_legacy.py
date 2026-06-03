@@ -1,23 +1,9 @@
 """
-Layer 0 of the binding-energy hierarchy: sub-nucleon constituents → nucleon.
+Legacy subatomic layer (pre-LEAN rewrite).
 
-Protons and neutrons are each made of sub-atomic constituents (in HQIV: horizon
-modes or lattice dof at that scale). This module computes the energy of a single
-proton or neutron as the bound state of its constituents, E = ħc Σ(1/Θ_i), and
-exposes effective horizons Θ_proton, Θ_neutron for use by nuclear.py (layer 1).
-
-**Design note:** The correct formulation is not only the color (confinement) force
-but **color vs Coulomb**: the full matrix of all energy states (e.g. from
-pyhqiv.algebra: 8×8, SU(3)_c, U(1)_Y) should be used so binding is the balance of
-both. Current code uses a placeholder (constituent count + equal Θ); replace with
-algebra-derived state matrix when implementing color–Coulomb competition.
-
-Hierarchy:
-  Layer 0 (here): constituents → E_proton, E_neutron, Θ_proton, Θ_neutron.
-  Layer 1 (nuclear): E_free = P×E_proton + N×E_neutron.
-  Layer 2 (nuclear): B_nuclear = E_free − E_nucleus.
-
-See docs/binding_energy_walkthrough.md (§6.1 full matrix, color vs Coulomb).
+This file is an exact backup of the original `subatomic.py` implementation
+before the HQIV_LEAN-aligned refactor. It is kept only for reference and for
+comparison tests; new code should depend on `subatomic.py` instead.
 """
 
 from __future__ import annotations
@@ -786,3 +772,4 @@ __all__ = [
     "quark_coulomb_energy_mev",
     "quark_nodes_for_nucleon",
 ]
+

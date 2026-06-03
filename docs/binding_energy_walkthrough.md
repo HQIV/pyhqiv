@@ -1,5 +1,10 @@
 # Binding energy calculation walkthrough
 
+**Target nuclear geometry (Fresnel caustics, D / ³H / ⁴H / ⁴He):** the authoritative
+intent for **algorithmic** binding (valley at ~2r, barbell, ring caustic, spin/statistics
+for β vs neutron emission) is documented in **`nuclear_fresnel_caustic_binding.md`**.
+This file below describes the **current** hierarchy and **HorizonNetwork** interim.
+
 ## 0. Hierarchical (bottom-up) picture
 
 Binding energy must be computed **hierarchically, bottom to top**:
@@ -249,6 +254,8 @@ One process, all scales: **`merge_constituents(constituents, project_singlet=...
 - **Quark geometry:** For three quarks, the “well” is the minimum of total energy (from the 8×8 merge and the axiom) over the configuration (positions or distances); the PDE/variational formulation replaces `relax_quark_positions(radii, charges)`. Same idea at nuclear scale: equilibrium nucleon positions from minimizing the same energy functional over the P+N configuration, with Θ from the composite 8×8.
 
 **Implementation direction:** Add a variational/PDE layer: define \(E_{\rm tot}\) from `HQIVEnergyField.energy_density` (and merge_constituents) over the domain; minimize over configuration, or solve the PDE that arises from \(\delta E_{\rm tot} = 0\). The resulting equilibrium distances and angles are the first-principles geometry—no Coulomb force constant, no relaxation scale.
+
+**Implemented scaffold (fresh, not from bak):** `pyhqiv.hqiv_continuum_minimum_energy` — harmonic \(\Delta x\) (\(\nabla^2\Delta x=0\)) on a 1D bond or 2D rectangle with Dirichlet data, then \(\int \hbar c/\Delta x\, ds\) or \(dA\); two-body separation minimizes the information term at endpoints when the line integral is linear in \(L\). Extend by coupling boundary \(\Delta x\) to nucleon horizons from the 8×8 layer.
 
 ---
 

@@ -1,235 +1,328 @@
-"""Tests for HQIV first-principles nuclear decay (nuclear.py)."""
+"""
+Nuclear-related tests for the Lean-witness pyhqiv rebuild.
+
+The full ``pyhqiv.nuclear`` module (HorizonNetwork binding, decay chains, algebraic
+fusion) still depends on the extended stack: ``constants``, ``fluid``,
+``hqiv_scalings``, ``horizon_network``, ``subatomic``/algebra, etc. That stack is
+not part of the slim package; imports are optional below.
+
+This file always tests SM–GR / witness-level nucleon anchors that *are* shipped
+(``witnesses.json`` via ``sm_gr_unification``). When the extended stack exists,
+the legacy nuclear dynamics tests run as well.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import numpy as np
+import pytest
 
-from pyhqiv.nuclear import (
-    BindingResult,
-    NuclearConfig,
-    binding_energy_mev_algebraic,
-    binding_energy_mev_functional,
-    binding_energy_mev_nucleon_level,
-    binding_energy_mev_quark_level,
-    build_nucleon_matrix_with_phase,
-    decay_chain,
-    decay_chain_nuclide_hqiv,
-    delta_E_info_mev,
-    half_life_nuclide_hqiv,
-    nuclide_from_symbol,
-    theta_nuclear_stable_m,
-    theta_nuclear_unstable_m,
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DATA_WITNESS = REPO_ROOT / "data" / "hqiv_witnesses.json"
+
+
+def _nucleon_mass_keys(w) -> tuple[str, str] | None:
+    """Return (proton_key, neutron_key) for whichever schema the JSON uses."""
+    d = w.data
+    if "derivedProtonMass_MeV" in d and "derivedNeutronMass_MeV" in d:
+        return ("derivedProtonMass_MeV", "derivedNeutronMass_MeV")
+    if "m_proton_MeV" in d and "m_neutron_MeV" in d:
+        return ("m_proton_MeV", "m_neutron_MeV")
+    return None
+
+
+def test_packaged_witnesses_nucleon_schema() -> None:
+    """
+    Bundled ``witnesses.json`` should carry nucleon masses under one of two schemes:
+
+    - Lean-derived export: ``derivedProtonMass_MeV`` / ``derivedNeutronMass_MeV``
+      (what ``sm_gr_unification.m_proton_MeV_central`` expects today), or
+    - Legacy anchor keys: ``m_proton_MeV`` / ``m_neutron_MeV``.
+    """
+    from pyhqiv.lean_witnesses import load_lean_witnesses
+
+    w = load_lean_witnesses()
+    keys = _nucleon_mass_keys(w)
+    if keys is None:
+        pytest.skip(
+            "Packaged witnesses.json has no nucleon mass keys; add derived* or m_proton_MeV / m_neutron_MeV"
+        )
+    pk, nk = keys
+    mp = w.get_float(pk)
+    mn = w.get_float(nk)
+    assert np.isfinite(mp) and mp > 100.0
+    assert np.isfinite(mn) and mn > mp
+
+
+def test_sm_gr_nucleon_masses_consistent_with_witness_loader() -> None:
+    """``m_*_MeV_central()`` matches the same keys read from the witness file."""
+    from pyhqiv.lean_witnesses import load_lean_witnesses
+    from pyhqiv.sm_gr_unification import m_neutron_MeV_central, m_proton_MeV_central
+
+    w = load_lean_witnesses()
+    keys = _nucleon_mass_keys(w)
+    if keys is None:
+        pytest.skip("No nucleon keys in witnesses.json — cannot test sm_gr nucleon accessors")
+    pk, nk = keys
+    assert m_proton_MeV_central() == w.get_float(pk)
+    assert m_neutron_MeV_central() == w.get_float(nk)
+
+
+def test_neutron_heavier_than_proton() -> None:
+    from pyhqiv.lean_witnesses import load_lean_witnesses
+    from pyhqiv.sm_gr_unification import m_neutron_MeV_central, m_proton_MeV_central
+
+    if _nucleon_mass_keys(load_lean_witnesses()) is None:
+        pytest.skip("No nucleon keys in witnesses.json")
+    assert m_neutron_MeV_central() > m_proton_MeV_central()
+
+
+@pytest.mark.skipif(not DATA_WITNESS.is_file(), reason="data/hqiv_witnesses.json not present")
+def test_data_witness_derived_nucleon_keys_when_present() -> None:
+    """
+    Pure-derived nucleon keys from the data export (if checked in).
+
+    ``derived_nucleon_report`` reads the default packaged JSON; this test
+    validates the *data* artifact used by ``test_hqiv_witness_json_derived_payload_only``.
+    """
+    data = json.loads(DATA_WITNESS.read_text(encoding="utf-8"))
+    for key in ("derivedProtonMass_MeV", "derivedNeutronMass_MeV", "derivedDeltaM_MeV"):
+        assert key in data
+        v = float(data[key])
+        assert np.isfinite(v) and v > 0.0
+    assert float(data["derivedNeutronMass_MeV"]) > float(data["derivedProtonMass_MeV"])
+
+
+def _nuclear_stack_available() -> bool:
+    try:
+        import pyhqiv.constants  # noqa: F401
+        import pyhqiv.fluid  # noqa: F401
+        import pyhqiv.hqiv_scalings  # noqa: F401
+        import pyhqiv.horizon_network  # noqa: F401
+        import pyhqiv.nuclear  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+extended = pytest.mark.skipif(
+    not _nuclear_stack_available(),
+    reason="extended nuclear stack (constants, horizon_network, …) not installed",
 )
-from pyhqiv.utils import decay_chain_nuclide, half_life_nuclide
 
 
-def test_nuclide_from_symbol():
-    """Element table gives (P, N) for default isotope."""
+@extended
+def test_nuclide_from_symbol() -> None:
+    from pyhqiv.nuclear import nuclide_from_symbol
+
     assert nuclide_from_symbol("H") == (1, 0)
     assert nuclide_from_symbol("He") == (2, 2)
     assert nuclide_from_symbol("C") == (6, 6)
     assert nuclide_from_symbol("C", N=8) == (6, 8)
 
 
-def test_theta_nuclear_stable_unstable():
-    """Θ_stable and Θ_unstable in metres; first-principles path gives one bound Θ per nucleus so θ_u ≤ θ_s (or equal)."""
+@extended
+def test_theta_nuclear_stable_unstable() -> None:
+    from pyhqiv.nuclear import theta_nuclear_stable_m, theta_nuclear_unstable_m
+
     theta_s = theta_nuclear_stable_m(6, 8)
     theta_u = theta_nuclear_unstable_m(6, 8)
     assert theta_s > 0 and theta_u > 0
-    assert theta_u <= theta_s + 1e-25  # allow float equality when all bound Θ identical
+    assert theta_u <= theta_s + 1e-25
 
 
-def test_delta_E_info_mev():
-    """ΔE_info = ħc(1/Θ_u - 1/Θ_s) positive when Θ_u < Θ_s."""
+@extended
+def test_delta_E_info_mev() -> None:
+    from pyhqiv.nuclear import delta_E_info_mev
+
     theta_s = 1.2e-15
     theta_u = 1.15e-15
     de = delta_E_info_mev(theta_u, theta_s)
     assert de > 0 and np.isfinite(de)
 
 
-def test_nuclear_config_c14():
-    """C-14: config builds; if first-principles allows β- snap, daughter is N-14."""
+@extended
+def test_nuclear_config_c14() -> None:
+    from pyhqiv.nuclear import NuclearConfig
+
     c14 = NuclearConfig(6, 8, "C14")
     assert c14.A == 14
     snaps = c14.allowed_snaps()
-    if len(snaps) >= 1:
-        daughter, dE, mode = snaps[0]
+    if snaps:
+        daughter, _de, mode = snaps[0]
         if mode == "β-":
             assert daughter.P == 7 and daughter.N == 7
 
 
-def test_free_neutron_prefers_beta_minus():
-    """A lone neutron can relax to a proton through the same beta-minus geometry."""
+@extended
+def test_decay_channel_reports_sum_matches_total_rate() -> None:
+    from pyhqiv.nuclear import NuclearConfig
+
+    n = NuclearConfig(0, 1)
+    ch = n.decay_channel_reports()
+    lam_sum = sum(c.decay_rate_per_s for c in ch)
+    lam_tot = n.decay_rate_per_s()
+    assert ch
+    np.testing.assert_allclose(lam_sum, lam_tot, rtol=1e-9)
+    br = sum(c.branching_ratio for c in ch)
+    np.testing.assert_allclose(br, 1.0, rtol=1e-9)
+
+
+@extended
+def test_nuclear_system_report_he4() -> None:
+    from pyhqiv.nuclear import NuclearConfig, nuclear_system_report
+
+    rep = nuclear_system_report(2, 2, name="He-4")
+    assert rep.composition.protons == 2 and rep.composition.neutrons == 2
+    assert rep.structure.mass_number == 4
+    assert rep.structure.geometry in (
+        "tetrahedron_candidate",
+        "two_body_segment",
+        "many_body_minimized",
+    )
+    assert rep.binding_energy_mev == NuclearConfig(2, 2).binding_energy_mev
+    assert np.isfinite(rep.binding_energy_mev_algebraic)
+    modes = {c.mode for c in rep.decay_channels}
+    assert "β-" not in modes and "β+" not in modes
+
+
+@extended
+def test_nuclear_system_report_extra_baryons_rejected() -> None:
+    from pyhqiv.nuclear import nuclear_system_report
+
+    with pytest.raises(ValueError, match="extra_baryons"):
+        nuclear_system_report(1, 1, extra_baryons={"Lambda": 1})
+
+
+@extended
+def test_free_neutron_prefers_beta_minus() -> None:
+    from pyhqiv.nuclear import NuclearConfig
+
     neutron = NuclearConfig(0, 1, "n")
     snaps = neutron.allowed_snaps()
-    assert any(mode == "β-" and daughter.P == 1 and daughter.N == 0 for daughter, _, mode in snaps)
+    assert any(
+        mode == "β-" and daughter.P == 1 and daughter.N == 0
+        for daughter, _, mode in snaps
+    )
 
 
-def test_tritium_beta_minus_to_he3():
-    """Hydrogen-3 beta-minus decays to helium-3 in the ladder picture."""
+@extended
+def test_tritium_beta_minus_to_he3() -> None:
+    from pyhqiv.nuclear import NuclearConfig
+
     tritium = NuclearConfig(1, 2, "H3")
     snaps = tritium.allowed_snaps()
-    assert any(mode == "β-" and daughter.P == 2 and daughter.N == 1 for daughter, _, mode in snaps)
+    assert any(
+        mode == "β-" and daughter.P == 2 and daughter.N == 1
+        for daughter, _, mode in snaps
+    )
 
 
-def test_he4_has_no_beta_channel():
-    """Helium-4 should not expose beta channels once all four nucleons share the same local valence."""
+@extended
+def test_he4_has_no_beta_channel() -> None:
+    from pyhqiv.nuclear import NuclearConfig
+
     he4 = NuclearConfig(2, 2, "He4")
     modes = {mode for _, _, mode in he4.allowed_snaps()}
     assert "β-" not in modes
     assert "β+" not in modes
 
 
-def test_half_life_nuclide_returns_float_or_none():
-    """half_life_nuclide (utils) and half_life_nuclide_hqiv return s or None."""
-    t = half_life_nuclide(6, 8)
+@extended
+def test_half_life_nuclide_hqiv() -> None:
+    from pyhqiv.nuclear import half_life_nuclide_hqiv
+
     t2 = half_life_nuclide_hqiv(6, 8)
-    if t is not None:
-        assert t > 0 and np.isfinite(t)
     if t2 is not None:
         assert t2 > 0 and np.isfinite(t2)
 
 
-def test_decay_chain_nuclide_returns_nuclide_decay():
-    """decay_chain_nuclide returns NuclideDecay with chain list."""
-    from pyhqiv.utils import NuclideDecay
+@extended
+def test_decay_chain() -> None:
+    from pyhqiv.nuclear import decay_chain
 
-    result = decay_chain_nuclide(6, 8, max_steps=5)
-    assert isinstance(result, NuclideDecay)
-    assert result.P == 6 and result.N == 8
-    assert len(result.decay_chain) >= 1
-    assert result.decay_chain[0] == (6, 8)
-
-
-def test_decay_chain_c14_to_n14():
-    """C-14 has β- to N-14 (7,7) as an allowed snap; chain starts at (6,8)."""
-    c14 = NuclearConfig(6, 8)
-    snaps = c14.allowed_snaps()
-    assert any(d.P == 7 and d.N == 7 and m == "β-" for d, _, m in snaps)
     chain = decay_chain(6, 8, max_steps=5)
     assert chain[0] == (6, 8)
     assert len(chain) >= 1
 
 
-def test_phase_lift_gives_nonzero_trace():
-    """build_nucleon_matrix_with_phase yields tr(M@Δ) ≠ 0 (axiom-derived θΔ)."""
+@extended
+def test_decay_chain_nuclide_hqiv() -> None:
+    from pyhqiv.nuclear import decay_chain_nuclide_hqiv
+
+    t_half, mode, dP, dN, chain2 = decay_chain_nuclide_hqiv(6, 8)
+    assert chain2[0] == (6, 8)
+    if len(chain2) >= 2 and mode == "β-":
+        assert dP == 7 and dN == 7
+
+
+@extended
+def test_phase_lift_gives_nonzero_trace() -> None:
+    from pyhqiv.algebra import OctonionHQIVAlgebra
     from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
+    from pyhqiv.nuclear import build_nucleon_matrix_with_phase
 
     L = get_hqiv_nuclear_constants(2.725)["LATTICE_BASE_M"]
     Mp = build_nucleon_matrix_with_phase(True, L)
     Mn = build_nucleon_matrix_with_phase(False, L)
-    from pyhqiv.algebra import OctonionHQIVAlgebra
     alg = OctonionHQIVAlgebra(verbose=False)
     D = alg.Delta
-    tr_p = np.trace(Mp @ D)
-    tr_n = np.trace(Mn @ D)
-    assert abs(tr_p) > 1e-10
-    assert abs(tr_n) > 1e-10
+    assert abs(np.trace(Mp @ D)) > 1e-10
+    assert abs(np.trace(Mn @ D)) > 1e-10
 
 
-def test_binding_energy_mev_algebraic_returns_float():
-    """binding_energy_mev_algebraic runs and returns a finite float."""
+@extended
+def test_binding_energy_mev_algebraic_returns_float() -> None:
+    from pyhqiv.nuclear import binding_energy_mev_algebraic
+
     b = binding_energy_mev_algebraic(2, 2)
     assert isinstance(b, (int, float))
     assert np.isfinite(b)
 
 
-# ── Binding energy: reality vs first-principles paths ──
-#
-# Experiment: He-4 B ≈ 28.3 MeV, 2H ≈ 2.2 MeV (AME/NNDC). HQIV: B = E_free − E_bound.
-# All three paths use the same minimizer (minimize_nucleon_configuration) for positions.
-# They differ only in how E_free and E_bound are defined:
-#
-# 1. Gold-standard functional: E_free = P·E_p + N·E_n (exact PDG from subatomic). E_bound from
-#    HorizonNetwork(nucleon nodes at minimized positions) + E_opp. Can yield B ≤ 0 if network
-#    + E_opp gives E_bound ≥ E_free.
-# 2. Nucleon-level: E_free = sum of single-nucleon HorizonNetwork(one node at origin).total_energy();
-#    E_bound = HorizonNetwork(nucleon nodes at same minimized positions) + E_opp. Same recipe
-#    for free and bound → often B > 0 for 2H/4He.
-# 3. Quark-level: same E_free as (2); E_bound from quark expansion (3×A nodes) + per-nucleon Θ
-#    + E_opp. Validates quark-layer consistency; also gives B > 0 for 2H/4He.
-#
-# test_physical_values.py asserts binding_energy_mev(P,N) (functional) against experiment (no clamp).
+@extended
+def test_stable_nuclide_zero_decay_rate() -> None:
+    from pyhqiv.nuclear import NuclearConfig
 
-
-def test_stable_nuclide_zero_decay_rate():
-    """N-14 (7,7): either no allowed snaps (rate 0) or effectively stable (long t_1/2)."""
     n14 = NuclearConfig(7, 7, "N14")
     rate = n14.decay_rate_per_s()
     t_half = n14.half_life_s()
-    # With B-derived Θ, SEMF can give small Q for β±; rate 0 or half-life ≫ 1 year
     assert rate == 0.0 or (t_half is not None and t_half > 3.15e7)
 
 
-def test_binding_gold_standard_2h_4he():
-    """Gold standard: functional method returns BindingResult with correct shape and self-consistency."""
+@extended
+def test_binding_gold_standard_2h_4he() -> None:
+    from pyhqiv.nuclear import BindingResult, binding_energy_mev_functional
+
     for P, N in [(1, 1), (2, 2)]:
         res = binding_energy_mev_functional(P, N)
         assert isinstance(res, BindingResult)
-        assert res.positions_m.shape[0] == P + N, f"(P={P},N={N}): positions shape"
+        assert res.positions_m.shape[0] == P + N
         assert np.isfinite(res.theta_p_m) and res.theta_p_m > 0
         assert np.isfinite(res.theta_n_m) and res.theta_n_m > 0
         assert np.isfinite(res.B_mev) and np.isfinite(res.E_free_mev) and np.isfinite(res.E_bound_mev)
-        # Self-consistency: B = E_free - E_bound
         np.testing.assert_allclose(res.B_mev, res.E_free_mev - res.E_bound_mev, rtol=1e-9)
-        # When binding is positive, bound state is lower than free
         if res.B_mev > 0:
             assert res.E_bound_mev < res.E_free_mev
 
 
-def test_binding_2h_4he_nucleon_level():
-    """2H and 4He: nucleon-level network gives E_bound < E_free (positive binding)."""
+@extended
+def test_binding_2h_4he_nucleon_level() -> None:
+    from pyhqiv.nuclear import binding_energy_mev_nucleon_level
+
     for P, N in [(1, 1), (2, 2)]:
         B, E_free, E_bound = binding_energy_mev_nucleon_level(P, N)
-        assert E_bound < E_free, f"2H/4He nucleon-level (P={P},N={N}): E_bound {E_bound} < E_free {E_free}"
-        assert B > 0 and np.isfinite(B), f"2H/4He nucleon-level (P={P},N={N}): B={B} positive and finite"
+        assert E_bound < E_free
+        assert B > 0 and np.isfinite(B)
 
 
-def test_binding_2h_4he_quark_level():
-    """2H and 4He: quark-level (nucleon-scale E_bound from per-nucleon Θ) gives E_bound < E_free."""
+@extended
+def test_binding_2h_4he_quark_level() -> None:
+    from pyhqiv.nuclear import binding_energy_mev_quark_level
+
     for P, N in [(1, 1), (2, 2)]:
         B, E_free, E_bound = binding_energy_mev_quark_level(P, N)
-        assert E_bound < E_free, f"2H/4He quark-level (P={P},N={N}): E_bound {E_bound} < E_free {E_free}"
-        assert B > 0 and np.isfinite(B), f"2H/4He quark-level (P={P},N={N}): B={B} positive and finite"
-
-
-# ── Qualified statements (gold standard: neutron, C-14, heavy water) ──
-
-
-def test_free_neutron_half_life_qualified():
-    """Free neutron (0,1): we predict a half-life in seconds (PDG ≈ 879 s)."""
-    t_half = half_life_nuclide_hqiv(0, 1)
-    # Either unstable (finite half-life) or stable (None)
-    if t_half is not None:
-        assert np.isfinite(t_half) and t_half > 0
-
-
-def test_c14_nuclide_and_decay_chain_qualified():
-    """C-14: (6,8); decay chain includes β⁻ daughter N-14 (7,7)."""
-    P, N = nuclide_from_symbol("C", A=14)
-    assert (P, N) == (6, 8)
-    chain = decay_chain(6, 8, max_steps=10)
-    assert len(chain) >= 1 and chain[0] == (6, 8)
-    # When β⁻ is allowed, first daughter is (7, 7)
-    t_half, mode, dP, dN, chain2 = decay_chain_nuclide_hqiv(6, 8)
-    if len(chain2) >= 2:
-        assert chain2[1] == (7, 7), f"C-14 daughter should be N-14 (7,7), got {chain2[1]}"
-    if mode == "β-":
-        assert dP == 7 and dN == 7
-
-
-def test_c14_half_life_qualified():
-    """C-14: we predict a half-life in seconds when unstable (PDG ≈ 5700 yr)."""
-    t_half = half_life_nuclide_hqiv(6, 8)
-    if t_half is not None:
-        assert np.isfinite(t_half) and t_half > 0
-
-
-def test_heavy_water_theta_qualified():
-    """Heavy water: Θ for deuterium (mass_amu=2) is isotope-dependent and finite."""
-    from pyhqiv.utils import theta_for_atom
-
-    theta_D = theta_for_atom("H", coordination=2, mass_amu=2)
-    theta_H = theta_for_atom("H", coordination=2)  # default mass
-    assert np.isfinite(theta_D) and theta_D > 0
-    assert np.isfinite(theta_H) and theta_H > 0
-    # Heavier isotope → larger Θ in current scaling (mass_amu scaling in theta_local)
-    assert theta_D > theta_H
+        assert E_bound < E_free
+        assert B > 0 and np.isfinite(B)

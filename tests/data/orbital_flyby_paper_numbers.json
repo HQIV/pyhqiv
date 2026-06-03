@@ -1,0 +1,601 @@
+{
+  "flyby_earth_nominal": {
+    "near_1998": {
+      "case_id": "near_1998",
+      "reported_anomaly_mm_s": 13.46,
+      "literature_sigma_mm_s": 0.13,
+      "classical_delta_v_mm_s": -928.1550524547129,
+      "hqiv_delta_v_mm_s": -926.3195861831264,
+      "hqiv_minus_classical_mm_s": 1.8354662715864833,
+      "hqiv_minus_literature_mm_s": -11.624533728413518,
+      "residual_n_sigma": -89.41949021856551,
+      "r_ca_km": 6898.769842768414,
+      "mean_one_minus_f_out": 1.1849190361566196e-09,
+      "asymptote_lat_in_deg": -19.430827316489317,
+      "asymptote_lat_out_deg": -71.7383766423022
+    },
+    "galileo_1990": {
+      "case_id": "galileo_1990",
+      "reported_anomaly_mm_s": 3.92,
+      "literature_sigma_mm_s": 0.08,
+      "classical_delta_v_mm_s": -294.33064460863534,
+      "hqiv_delta_v_mm_s": -291.2961760775943,
+      "hqiv_minus_classical_mm_s": 3.034468531041057,
+      "hqiv_minus_literature_mm_s": -0.8855314689589431,
+      "residual_n_sigma": -11.069143361986788,
+      "r_ca_km": 7327.897537357646,
+      "mean_one_minus_f_out": 5.867634971287005e-10,
+      "asymptote_lat_in_deg": -11.800782692982981,
+      "asymptote_lat_out_deg": -33.799336493203654
+    },
+    "cassini_1999": {
+      "case_id": "cassini_1999",
+      "reported_anomaly_mm_s": -0.5,
+      "literature_sigma_mm_s": 3.0,
+      "classical_delta_v_mm_s": -86.06649840476166,
+      "hqiv_delta_v_mm_s": -85.83034934963507,
+      "hqiv_minus_classical_mm_s": 0.2361490551265888,
+      "hqiv_minus_literature_mm_s": 0.7361490551265888,
+      "residual_n_sigma": 0.2453830183755296,
+      "r_ca_km": 7554.286414749471,
+      "mean_one_minus_f_out": 1.4757123442822307e-10,
+      "asymptote_lat_in_deg": -13.221749862390737,
+      "asymptote_lat_out_deg": -5.331137942795227
+    },
+    "rosetta_2005": {
+      "case_id": "rosetta_2005",
+      "reported_anomaly_mm_s": 1.8,
+      "literature_sigma_mm_s": 0.05,
+      "classical_delta_v_mm_s": -1403.7613686905388,
+      "hqiv_delta_v_mm_s": -1405.5274743859627,
+      "hqiv_minus_classical_mm_s": -1.766105695423903,
+      "hqiv_minus_literature_mm_s": -3.5661056954239028,
+      "residual_n_sigma": -71.32211390847804,
+      "r_ca_km": 8302.134553856185,
+      "mean_one_minus_f_out": 7.320874856098603e-10,
+      "asymptote_lat_in_deg": -1.6028007636261623,
+      "asymptote_lat_out_deg": -34.50657737156555
+    }
+  },
+  "flyby_ablations_mm_s": {
+    "lit": {
+      "near_1998": 13.46,
+      "galileo_1990": 3.92,
+      "cassini_1999": -0.5,
+      "rosetta_2005": 1.8
+    },
+    "nominal": {
+      "near_1998": 1.8355,
+      "galileo_1990": 3.0345,
+      "cassini_1999": 0.2361,
+      "rosetta_2005": -1.7661
+    },
+    "fixed_lambda_0.5": {
+      "near_1998": 3.9336,
+      "galileo_1990": 9.3988,
+      "cassini_1999": 6.3498,
+      "rosetta_2005": -11.1889
+    },
+    "drop_lt": {
+      "near_1998": -0.8723,
+      "galileo_1990": 0.9911,
+      "cassini_1999": -0.637,
+      "rosetta_2005": 0.6544
+    },
+    "drop_colatitude_lt": {
+      "near_1998": 4.7767,
+      "galileo_1990": 2.1683,
+      "cassini_1999": -0.8905,
+      "rosetta_2005": 1.5583
+    },
+    "drop_geodesic": {
+      "near_1998": 1.8355,
+      "galileo_1990": 3.0345,
+      "cassini_1999": 0.2362,
+      "rosetta_2005": -1.766
+    },
+    "drop_spin_lapse": {
+      "near_1998": -0.0,
+      "galileo_1990": 0.0,
+      "cassini_1999": -0.0,
+      "rosetta_2005": -0.0
+    },
+    "drop_galactic_rindler": {
+      "near_1998": 1.835,
+      "galileo_1990": 3.0339,
+      "cassini_1999": 0.2361,
+      "rosetta_2005": -1.7661
+    }
+  },
+  "near_dt_convergence": [
+    {
+      "dt_s": 4.0,
+      "classical_delta_v_mm_s": -928.1577999863657,
+      "hqiv_delta_v_mm_s": -926.3223335265138,
+      "excess_mm_s": 1.8354664598518866
+    },
+    {
+      "dt_s": 2.0,
+      "classical_delta_v_mm_s": -928.1550524547129,
+      "hqiv_delta_v_mm_s": -926.3195861831264,
+      "excess_mm_s": 1.8354662715864833
+    },
+    {
+      "dt_s": 1.0,
+      "classical_delta_v_mm_s": -928.1320687250627,
+      "hqiv_delta_v_mm_s": -926.2966025635251,
+      "excess_mm_s": 1.8354661615376244
+    },
+    {
+      "dt_s": 0.5,
+      "classical_delta_v_mm_s": -928.122931555663,
+      "hqiv_delta_v_mm_s": -926.2874651021775,
+      "excess_mm_s": 1.8354664534854237
+    }
+  ],
+  "sparc_whim_summary": {
+    "n_galaxies": 153,
+    "n_rotmod_points": 3168,
+    "n_hqiv_better_than_baryonic": 106,
+    "n_hqiv_more_than_10x_better": 43,
+    "fraction_hqiv_better": 0.6928104575163399,
+    "sum_chi2_hqiv": 610778.4286938957,
+    "sum_chi2_baryonic": 1952253.016517335,
+    "ratio_sum_chi2_hqiv_over_baryonic": 0.31285823278351294,
+    "median_chi2_red_hqiv": 34.7784807745031,
+    "median_chi2_red_baryonic": 113.26021284109153,
+    "median_chi2_red_hqiv_distribution": {
+      "median": 34.7784807745031,
+      "mean": 177.639384327427,
+      "lo68": 7.702831742568488,
+      "hi68": 180.2067658093571,
+      "min": 0.646375562521614,
+      "max": 7154.158144863294
+    },
+    "median_chi2_red_baryonic_distribution": {
+      "median": 113.26021284109153,
+      "mean": 429.8731682463425,
+      "lo68": 21.97907467207037,
+      "hi68": 647.7151283881622,
+      "min": 0.5945204319827249,
+      "max": 6130.545888764023
+    },
+    "median_rms_hqiv_kms": 24.680872725937764,
+    "median_rms_baryonic_kms": 42.1498963264843,
+    "median_rms_hqiv_distribution": {
+      "median": 24.680872725937764,
+      "mean": 27.46521039604238,
+      "lo68": 11.860555937191734,
+      "hi68": 41.5040509075223,
+      "min": 2.795583100059262,
+      "max": 98.25898079679655
+    },
+    "median_rms_baryonic_distribution": {
+      "median": 42.1498963264843,
+      "mean": 45.12210773427002,
+      "lo68": 23.562254466253872,
+      "hi68": 65.03185648320908,
+      "min": 2.444233288569486,
+      "max": 167.86710373521154
+    },
+    "median_mean_one_minus_f": 0.7838057627401789,
+    "median_mean_one_minus_f_distribution": {
+      "median": 0.7838057627401789,
+      "mean": 0.711054224107801,
+      "lo68": 0.44030683129189674,
+      "hi68": 0.8988211613294002,
+      "min": 0.14761926269783449,
+      "max": 0.973468357795077
+    },
+    "per_quality": {
+      "1": {
+        "n_galaxies": 93,
+        "n_hqiv_better": 70,
+        "median_chi2_red_hqiv": 35.5167162575162,
+        "median_chi2_red_baryonic": 139.55334527607397
+      },
+      "2": {
+        "n_galaxies": 60,
+        "n_hqiv_better": 36,
+        "median_chi2_red_hqiv": 34.01100482053593,
+        "median_chi2_red_baryonic": 41.57311025776612
+      }
+    },
+    "best_hqiv": [
+      {
+        "name": "UGC12732",
+        "quality": 1,
+        "chi2_red_hqiv": 0.646375562521614,
+        "chi2_red_baryonic": 163.4239886795544,
+        "rms_hqiv_kms": 2.795583100059262
+      },
+      {
+        "name": "UGC12506",
+        "quality": 2,
+        "chi2_red_hqiv": 1.2984721228010585,
+        "chi2_red_baryonic": 77.93023123668137,
+        "rms_hqiv_kms": 15.804968262629046
+      },
+      {
+        "name": "NGC3953",
+        "quality": 1,
+        "chi2_red_hqiv": 1.3088915289618872,
+        "chi2_red_baryonic": 61.40701985525878,
+        "rms_hqiv_kms": 7.680676101575007
+      },
+      {
+        "name": "NGC3521",
+        "quality": 1,
+        "chi2_red_hqiv": 2.0274168832939052,
+        "chi2_red_baryonic": 15.150541402719485,
+        "rms_hqiv_kms": 11.651235002296298
+      },
+      {
+        "name": "F583-1",
+        "quality": 1,
+        "chi2_red_hqiv": 2.2572823885546955,
+        "chi2_red_baryonic": 50.59806101759628,
+        "rms_hqiv_kms": 9.147948644494917
+      },
+      {
+        "name": "NGC5005",
+        "quality": 1,
+        "chi2_red_hqiv": 2.3103495159179075,
+        "chi2_red_baryonic": 2.2615674512000234,
+        "rms_hqiv_kms": 23.873761612864662
+      },
+      {
+        "name": "NGC0024",
+        "quality": 1,
+        "chi2_red_hqiv": 2.331595433791895,
+        "chi2_red_baryonic": 89.44040982666382,
+        "rms_hqiv_kms": 9.697268050771154
+      },
+      {
+        "name": "NGC2915",
+        "quality": 2,
+        "chi2_red_hqiv": 2.7096091599924175,
+        "chi2_red_baryonic": 58.997358041444095,
+        "rms_hqiv_kms": 13.97479234958803
+      },
+      {
+        "name": "NGC7793",
+        "quality": 1,
+        "chi2_red_hqiv": 2.999876253357491,
+        "chi2_red_baryonic": 14.831022258079026,
+        "rms_hqiv_kms": 10.525485859245428
+      },
+      {
+        "name": "UGC02885",
+        "quality": 1,
+        "chi2_red_hqiv": 3.124138146316034,
+        "chi2_red_baryonic": 131.85218803646214,
+        "rms_hqiv_kms": 17.675231671228623
+      }
+    ],
+    "worst_hqiv": [
+      {
+        "name": "UGC00128",
+        "quality": 1,
+        "chi2_red_hqiv": 7154.158144863294,
+        "chi2_red_baryonic": 6130.545888764023,
+        "rms_hqiv_kms": 98.25898079679655
+      },
+      {
+        "name": "UGC00891",
+        "quality": 2,
+        "chi2_red_hqiv": 2376.4328939144925,
+        "chi2_red_baryonic": 1784.629550154783,
+        "rms_hqiv_kms": 35.0836001574847
+      },
+      {
+        "name": "IC2574",
+        "quality": 2,
+        "chi2_red_hqiv": 2076.352041315994,
+        "chi2_red_baryonic": 406.76050222150184,
+        "rms_hqiv_kms": 38.86668769711251
+      },
+      {
+        "name": "UGC00634",
+        "quality": 2,
+        "chi2_red_hqiv": 1386.0382911178103,
+        "chi2_red_baryonic": 1475.693436592625,
+        "rms_hqiv_kms": 55.38967305640086
+      },
+      {
+        "name": "DDO161",
+        "quality": 1,
+        "chi2_red_hqiv": 1353.5552915117291,
+        "chi2_red_baryonic": 371.7528535946911,
+        "rms_hqiv_kms": 45.965729127606664
+      },
+      {
+        "name": "NGC0055",
+        "quality": 2,
+        "chi2_red_hqiv": 953.665727773208,
+        "chi2_red_baryonic": 119.10285072416099,
+        "rms_hqiv_kms": 74.38372479886978
+      },
+      {
+        "name": "UGC00191",
+        "quality": 1,
+        "chi2_red_hqiv": 678.7139784413662,
+        "chi2_red_baryonic": 822.0315281223712,
+        "rms_hqiv_kms": 26.971535317773807
+      },
+      {
+        "name": "UGC02953",
+        "quality": 2,
+        "chi2_red_hqiv": 659.8046818710412,
+        "chi2_red_baryonic": 2428.8988689667726,
+        "rms_hqiv_kms": 46.47114586877216
+      },
+      {
+        "name": "NGC0247",
+        "quality": 2,
+        "chi2_red_hqiv": 587.6663846466115,
+        "chi2_red_baryonic": 355.42140956682437,
+        "rms_hqiv_kms": 43.7046151066452
+      },
+      {
+        "name": "DDO170",
+        "quality": 2,
+        "chi2_red_hqiv": 584.6152830072313,
+        "chi2_red_baryonic": 599.3246036100315,
+        "rms_hqiv_kms": 28.66113617010109
+      }
+    ]
+  },
+  "sparc_cosmic_floor_summary": {
+    "n_galaxies": 153,
+    "n_rotmod_points": 3168,
+    "n_hqiv_better_than_baryonic": 95,
+    "n_hqiv_more_than_10x_better": 37,
+    "fraction_hqiv_better": 0.6209150326797386,
+    "sum_chi2_hqiv": 757257.9728066026,
+    "sum_chi2_baryonic": 1952253.016517335,
+    "ratio_sum_chi2_hqiv_over_baryonic": 0.38788925738605895,
+    "median_chi2_red_hqiv": 49.874505687919495,
+    "median_chi2_red_baryonic": 113.26021284109153,
+    "median_chi2_red_hqiv_distribution": {
+      "median": 49.874505687919495,
+      "mean": 225.21676211825275,
+      "lo68": 9.459618996959342,
+      "hi68": 273.95362462829826,
+      "min": 1.2984721228010583,
+      "max": 6439.56485924758
+    },
+    "median_chi2_red_baryonic_distribution": {
+      "median": 113.26021284109153,
+      "mean": 429.8731682463425,
+      "lo68": 21.97907467207037,
+      "hi68": 647.7151283881622,
+      "min": 0.5945204319827249,
+      "max": 6130.545888764023
+    },
+    "median_rms_hqiv_kms": 29.04632682897602,
+    "median_rms_baryonic_kms": 42.1498963264843,
+    "median_rms_hqiv_distribution": {
+      "median": 29.04632682897602,
+      "mean": 30.881236436625716,
+      "lo68": 13.886738729114784,
+      "hi68": 46.498658440772786,
+      "min": 4.832765566534039,
+      "max": 79.92211774092947
+    },
+    "median_rms_baryonic_distribution": {
+      "median": 42.1498963264843,
+      "mean": 45.12210773427002,
+      "lo68": 23.562254466253872,
+      "hi68": 65.03185648320908,
+      "min": 2.444233288569486,
+      "max": 167.86710373521154
+    },
+    "median_mean_one_minus_f": 0.8137646830804475,
+    "median_mean_one_minus_f_distribution": {
+      "median": 0.8137646830804475,
+      "mean": 0.7263691847587117,
+      "lo68": 0.4441706504602296,
+      "hi68": 0.9323758330496676,
+      "min": 0.14761926269783449,
+      "max": 0.97718560401907
+    },
+    "per_quality": {
+      "1": {
+        "n_galaxies": 93,
+        "n_hqiv_better": 65,
+        "median_chi2_red_hqiv": 46.194343237323345,
+        "median_chi2_red_baryonic": 139.55334527607397
+      },
+      "2": {
+        "n_galaxies": 60,
+        "n_hqiv_better": 30,
+        "median_chi2_red_hqiv": 55.67285112091925,
+        "median_chi2_red_baryonic": 41.57311025776612
+      }
+    },
+    "best_hqiv": [
+      {
+        "name": "UGC12506",
+        "quality": 2,
+        "chi2_red_hqiv": 1.2984721228010583,
+        "chi2_red_baryonic": 77.93023123668137,
+        "rms_hqiv_kms": 15.804968262629044
+      },
+      {
+        "name": "NGC3953",
+        "quality": 1,
+        "chi2_red_hqiv": 1.3088915289618872,
+        "chi2_red_baryonic": 61.40701985525878,
+        "rms_hqiv_kms": 7.680676101575007
+      },
+      {
+        "name": "NGC3521",
+        "quality": 1,
+        "chi2_red_hqiv": 2.0274168832939052,
+        "chi2_red_baryonic": 15.150541402719485,
+        "rms_hqiv_kms": 11.651235002296298
+      },
+      {
+        "name": "F568-V1",
+        "quality": 1,
+        "chi2_red_hqiv": 2.25904357955139,
+        "chi2_red_baryonic": 45.580724149314264,
+        "rms_hqiv_kms": 19.46803800341106
+      },
+      {
+        "name": "NGC5005",
+        "quality": 1,
+        "chi2_red_hqiv": 2.3120352664246115,
+        "chi2_red_baryonic": 2.2615674512000234,
+        "rms_hqiv_kms": 23.88508120812768
+      },
+      {
+        "name": "NGC0024",
+        "quality": 1,
+        "chi2_red_hqiv": 2.331595433791895,
+        "chi2_red_baryonic": 89.44040982666382,
+        "rms_hqiv_kms": 9.697268050771154
+      },
+      {
+        "name": "UGC07399",
+        "quality": 1,
+        "chi2_red_hqiv": 2.6182474085892986,
+        "chi2_red_baryonic": 329.1413859907484,
+        "rms_hqiv_kms": 4.832765566534039
+      },
+      {
+        "name": "UGC02885",
+        "quality": 1,
+        "chi2_red_hqiv": 3.124138146316034,
+        "chi2_red_baryonic": 131.85218803646214,
+        "rms_hqiv_kms": 17.675231671228623
+      },
+      {
+        "name": "UGC08490",
+        "quality": 1,
+        "chi2_red_hqiv": 3.278893852802962,
+        "chi2_red_baryonic": 147.87110866126235,
+        "rms_hqiv_kms": 6.681747270673324
+      },
+      {
+        "name": "NGC6789",
+        "quality": 2,
+        "chi2_red_hqiv": 3.5155320982402403,
+        "chi2_red_baryonic": 21.805655469204677,
+        "rms_hqiv_kms": 10.662613026493707
+      }
+    ],
+    "worst_hqiv": [
+      {
+        "name": "IC2574",
+        "quality": 2,
+        "chi2_red_hqiv": 6439.56485924758,
+        "chi2_red_baryonic": 406.76050222150184,
+        "rms_hqiv_kms": 67.62891282422075
+      },
+      {
+        "name": "UGC00128",
+        "quality": 1,
+        "chi2_red_hqiv": 4058.6218277687162,
+        "chi2_red_baryonic": 6130.545888764023,
+        "rms_hqiv_kms": 62.49341121931047
+      },
+      {
+        "name": "UGC00891",
+        "quality": 2,
+        "chi2_red_hqiv": 2006.7968735255138,
+        "chi2_red_baryonic": 1784.629550154783,
+        "rms_hqiv_kms": 38.85876206375606
+      },
+      {
+        "name": "DDO170",
+        "quality": 2,
+        "chi2_red_hqiv": 1812.9049734051628,
+        "chi2_red_baryonic": 599.3246036100315,
+        "rms_hqiv_kms": 51.3746048266684
+      },
+      {
+        "name": "UGC11820",
+        "quality": 1,
+        "chi2_red_hqiv": 1241.08463997214,
+        "chi2_red_baryonic": 1194.6909530837436,
+        "rms_hqiv_kms": 35.35582624861076
+      },
+      {
+        "name": "NGC0055",
+        "quality": 2,
+        "chi2_red_hqiv": 1097.3149586311,
+        "chi2_red_baryonic": 119.10285072416099,
+        "rms_hqiv_kms": 79.92211774092947
+      },
+      {
+        "name": "UGC05764",
+        "quality": 2,
+        "chi2_red_hqiv": 1025.354786852019,
+        "chi2_red_baryonic": 2201.8043939200243,
+        "rms_hqiv_kms": 24.70733704129772
+      },
+      {
+        "name": "UGC07125",
+        "quality": 1,
+        "chi2_red_hqiv": 956.2054705308118,
+        "chi2_red_baryonic": 80.9245612081967,
+        "rms_hqiv_kms": 75.46987889309399
+      },
+      {
+        "name": "UGC05716",
+        "quality": 2,
+        "chi2_red_hqiv": 768.0644175567522,
+        "chi2_red_baryonic": 2553.949384051958,
+        "rms_hqiv_kms": 20.012885450890778
+      },
+      {
+        "name": "NGC0247",
+        "quality": 2,
+        "chi2_red_hqiv": 704.178336487321,
+        "chi2_red_baryonic": 355.42140956682437,
+        "rms_hqiv_kms": 48.44222332828922
+      }
+    ]
+  },
+  "ddo154": {
+    "chi2_red_whim": 117.52584308103154,
+    "chi2_red_floor": 684.9065819607605
+  },
+  "chae_aggregate": {
+    "gamma_eff_hqiv_mean_of_systems": 1.0000042461658398,
+    "gamma_eff_hqiv_distribution": {
+      "median": 1.0000037776926212,
+      "mean": 1.0000042461658398,
+      "lo68": 1.0000016154777334,
+      "hi68": 1.0000078916950346,
+      "min": 1.0000011214091684,
+      "max": 1.0000089820299032
+    },
+    "gamma_eff_hqiv_hi_spin_envelope": {
+      "median": 1.0007809163994517,
+      "mean": 1.0008102189521901,
+      "lo68": 1.0002994302753312,
+      "hi68": 1.0013941219306368,
+      "min": 1.0000724212792143,
+      "max": 1.0016265154510648
+    },
+    "gamma_eff_hqiv_min": 1.0000011214091684,
+    "gamma_eff_hqiv_max": 1.0000089820299032,
+    "gamma_chae_median": 1.3243415351946646,
+    "gamma_chae_mean": 1.9535557726458397,
+    "gamma_chae_distribution": {
+      "median": 1.3092686883223252,
+      "mean": 1.9535557726458397,
+      "lo68": 0.4273566059398848,
+      "hi68": 3.839253079678227,
+      "min": 0.2070141348791042,
+      "max": 7.079457843841379
+    },
+    "n_chae_falsified_by_hqiv_envelope": 9,
+    "n_chae_claiming_high_boost": 9,
+    "fraction_chae_falsified": 1.0,
+    "fraction_chae_falsified_all_systems": 0.25
+  }
+}

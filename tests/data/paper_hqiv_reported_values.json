@@ -1,0 +1,16 @@
+{
+  "source": "HQIV paper series (Zenodo records) + Lean witnesses. These are the HQIV framework predictions claimed in the papers, to be reproduced by the calculator (py mirror of Lean). Not experimental.",
+  "values": {
+    "alpha": {"value": 0.6, "tol": 1e-9, "source": "alpha=3/5 forced by lattice, papers + AlphaGammaForcedByLattice.lean"},
+    "gamma": {"value": 0.4, "tol": 1e-9, "source": "gamma=2/5 =1-alpha"},
+    "reference_m": {"value": 4, "tol": 0, "source": "referenceM from light-cone ladder (qcdShell + steps)"},
+    "combinatorial_norm": {"value": 484863.374868, "tol": 1, "source": "6^7 * sqrt(3) curvature norm"},
+    "omega_k_true_paper": {"value": 0.0098, "tol": 1e-6, "source": "main paper / lightcone Omega_k^true at horizon"},
+    "lapse_compression_paper": {"value": 3.96, "tol": 0.1, "source": "wall/apparent age ratio ~51.2/13.8"},
+    "age_wall_gyr_paper": {"value": 51.2, "tol": 0.1, "source": "lattice evolve wall clock age"},
+    "age_apparent_gyr_paper": {"value": 13.8, "tol": 0.1, "source": "apparent (lapse compressed)"},
+    "so8_dim": {"value": 28, "tol": 0, "source": "SO8Closure.lean"},
+    "T_cmb_K_local": {"value": 2.7255, "tol": 0.001, "source": "local condition, Planck 2018"},
+    "derived_proton_MeV": {"value": 938.272, "tol": 0.001, "source": "Lean DerivedNucleonMass + tuft witness (paper comparison to PDG)"}
+  }
+}

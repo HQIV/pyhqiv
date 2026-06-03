@@ -1,4 +1,4 @@
-# pyhqiv — Horizon-Quantized Informational Vacuum (HQIV)
+# pyhqiv — Horizon-Quantized Informational Vacuum (HQIV) Calculator
 
 [![PyPI version](https://badge.fury.io/py/pyhqiv.svg)](https://badge.fury.io/py/pyhqiv)
 [![CI](https://github.com/disregardfiat/pyhqiv/actions/workflows/ci.yml/badge.svg)](https://github.com/disregardfiat/pyhqiv/actions/workflows/ci.yml)
@@ -6,19 +6,20 @@
 
 > **⚠️ Experimental status.** All features in this package are experimental. APIs and numerical results may change. Public contribution and feedback are greatly appreciated — please open issues or pull requests on [GitHub](https://github.com/disregardfiat/pyhqiv).
 
-> **Known issues:** The CMB pipeline in particular has known limitations (analytic transfer vs full Boltzmann hierarchy, phenomenological map from C_ℓ template, peak positions/shape vs CLASS-HQIV). See [docs/HQIV_CMB_Pipeline.md](docs/HQIV_CMB_Pipeline.md) for details.
+**pyhqiv** is the clean, first-principles Python calculator for the HQIV framework (discrete null-lattice combinatorics + horizon monogamy + octonionic carriers). It exactly mirrors the Lean formalization in [HQIV/hqiv-lean](https://github.com/HQIV/hqiv-lean) and the paper series in `HQIV_LEAN/papers/`.
 
----
+It is designed as the **usable calculator**:
+- **src/pyhqiv/** contains **only pure geometry + functional code** (no physics constants except cube diagonals √3, 2π phase, naturals).
+- All scale/anchors (masses, T ladder, etc.) come from Lean witnesses (via `lean_witnesses` + `scale_witness`).
+- Applied modules (thermo, orbital, nuclei, etc.) take **minimal inputs** (just A/Z or composition for elements/isotopes/compounds) — everything derives from the foundation + local conditions.
+- Comparisons and benchmarks live in tests with **explicit error bars from source material** (PDG, Planck, literature sigmas, paper tables).
+- The **HQIV Arena** (with hqiv-lean) is the improvement engine: submit pure dynamic functions (second-order terms, corrections) or features + tests; CI ensures they beat σ everywhere with no protected regressions.
 
-**Why HQIV?** HQIV unifies causal-horizon monogamy with discrete null-lattice combinatorics to predict curvature (Ω_k), CMB-consistent ages, and phase-horizon corrections to Maxwell/fluids/molecules. See the [paper](https://doi.org/10.5281/zenodo.18794889) for the full framework.
-
-Pip-installable Python package implementing the **Horizon-Quantized Informational Vacuum (HQIV)** framework exactly as defined in the paper:
-
-> **Ettinger, Steven Jr**, *Horizon-Quantized Informational Vacuum (HQIV): A Unified Framework from Causal Horizon Monogamy and Discrete Null-Lattice Combinatorics*. Zenodo, 2026. [https://doi.org/10.5281/zenodo.18794889](https://doi.org/10.5281/zenodo.18794889)
+See the foundational paper: Ettinger, Steven Jr. *Horizon-Quantized Informational Vacuum (HQIV)...* Zenodo 2026 (DOI above) and the full paper series at `HQIV_LEAN/papers/`.
 
 ## Citation
 
-If you use this package in research, please cite the paper. On GitHub you can use the **Cite this repository** button (from `CITATION.cff` in the repo root):
+Use the Zenodo record or the repo button (CITATION.cff):
 
 ```bibtex
 @misc{ettinger2026hqiv,
@@ -37,326 +38,252 @@ If you use this package in research, please cite the paper. On GitHub you can us
 pip install pyhqiv
 ```
 
-From source:
+From source (editable, for development/arena):
 
 ```bash
 git clone https://github.com/disregardfiat/pyhqiv.git && cd pyhqiv
-pip install -e .
+pip install -e ".[dev]"
 ```
 
-Also on [TestPyPI](https://test.pypi.org/project/pyhqiv/) for pre-release testing:  
-`pip install --index-url https://test.pypi.org/simple/ pyhqiv`
+Optional extras: `ase`, `mda`, `qutip`, `jax`, `pyvista`, `cosmology`, `all`.
 
-| Extra | Purpose |
-|-------|---------|
-| `ase` | ASE for structure/relaxation (protein/crystal) |
-| `mda` | MDAnalysis for trajectories (protein demo) |
-| `qutip` | QuTiP for quantum optics |
-| `jax` | JAX for JIT-accelerated lattice integrals / evolve_to_cmb |
-| `pyvista` | PyVista for 3D visualization |
-| `cosmology` | Healpy for full CMB pipeline (maps, C_ℓ, σ₈, LOS/ISW) — optional heavy module |
-| `all` | All of the above |
+## The Clean Calculator Rules (important for users & contributors)
 
-```bash
-pip install pyhqiv[ase,mda,qutip,jax,pyvista]
-# or
-pip install pyhqiv[all]
-```
+- **src/pyhqiv/ is pure and const-free** (except geometry). No masses, T_CMB, α_EM, hbar_SI, etc. in .py source.
+- Use `from pyhqiv.scale_witness import ...` or `load_lean_witnesses()` for anchors (derivedProtonMass, referenceM, resonance k's, etc.). Local conditions (CMB now, earth surface g/ε0, H0, etc.) live in `tests/setup_defaults.py` + `src/pyhqiv/local_conditions.json` (for tests/applied use).
+- **Minimal inputs**: For thermo/phase/allotropes/masses/bindings → just Z (atomic number), optional A (mass number), or formula/stoich. The foundation (lightcone + metric + auxiliary + fluid) + witnesses do the rest.
+- All paper comparisons / benchmarks have tests with **error bars from the source** (see `tests/test_all_paper_comparisons_with_errors.py`, `test_thermo.py`, `test_binding_energy_vs_pdg.py`, etc.). Gaps are expected and scored via z/σ.
+- **Arena is how you improve it**: New pure functions (no consts) or features must come with tests + error bars. CI (Lean alignment, pytest, sigma scoring) decides merges. See below.
 
-## Quick start
-
-**Cosmology (one call):** Evolve to the CMB and get Ω_k^true, wall-clock/apparent ages, and lapse:  
-`result = HQIVCosmology().evolve_to_cmb(T0_K=2.725)` → Ω_k ≈ 0.0098, age 51.2 / 13.8 Gyr, lapse ≈ 3.96.
-
-**Full CMB (T_Pl → now):** With `pip install pyhqiv[cosmology]`, run the evolver and get a full-sky map in µK plus σ₈:
+## Foundation (the core — use these directly)
 
 ```python
-from pyhqiv import HQIVUniverseEvolver
-import healpy as hp
-
-evolver = HQIVUniverseEvolver(nside=1024)
-result = evolver.run_from_T_Pl_to_now()
-hp.mollview(result["T_map_muK"], title="HQIV CMB from Planck epoch to now")
-print(f"σ₈ = {result['sigma8']:.4f}")
+from pyhqiv.lightcone import (
+    alpha,                    # exactly 3/5
+    available_modes,          # 4*(m+2)*(m+1) from lattice axiom
+    curvature_norm_combinatorial,  # 6^7 * sqrt(3) pure geometry
+    omega_k_at_horizon, omega_k_partial,
+    reference_m, new_modes, shell_shape, ...
+)
+from pyhqiv.metric import (
+    gamma_hqiv,               # exactly 2/5 = 1 - alpha
+    hqvm_lapse,               # 1 + Φ + φ * t
+    g_eff, three_minus_gamma, hqvm_friedmann_residual, ...
+)
+from pyhqiv.auxiliary_field import (
+    phi_of_shell, shell_temperature,  # φ(m) = 2/(m+1), T(m)=1/(m+1) (T_Pl=1 natural)
+    phi_of_temperature, ...
+)
+from pyhqiv.scale_witness import (
+    ScaleWitness, defaultScaleWitness,  # proton_lockin / codata_alpha / cmb_now
+    derived_proton_mass_MeV, derived_neutron_mass_MeV,
+    local_cmb_temperature_K, local_earth_surface_g,
+    molar_mass_from_Z,  # just A/Z → kg/mol from anchors
+    xi_g_for_witness, load_local_conditions,
+)
+from pyhqiv.lean_witnesses import load_lean_witnesses  # single source of truth (Lean export + overlay)
+from pyhqiv.thermodynamic_fundamentals import (
+    horizon_entropy_counting, entropy_increment_per_shell,  # S ∝ cum modes, ΔS > 0
+    second_law_arrow_holds, temperature_at_shell,
+    local_equilibrium_proxy, ...
+)
 ```
 
-See `examples/cmb_mollview_planck.py` and `examples/cmb_mollview_planck.ipynb` for mollview + C_ℓ vs Planck.
+**Geometry-only repro** (paper numbers, no scales):
 
 ```python
-from pyhqiv import DiscreteNullLattice, HQIVSystem, HQIVCosmology
-import numpy as np
+from pyhqiv.lightcone import reference_m, omega_k_at_horizon, curvature_norm_combinatorial
+from pyhqiv.metric import gamma_hqiv
 
-# Cosmology
-result = HQIVCosmology().evolve_to_cmb(T0_K=2.725)  # Omega_true_k ≈ 0.0098
-
-# Fields
-lattice = DiscreteNullLattice(m_trans=500, gamma=0.40)
-sys = HQIVSystem.from_atoms([(0, 0, 0), (1.5, 0, 0)], charges=[1, -1], gamma=0.40)
-grid = np.mgrid[-2:2:11j, -2:2:11j, -2:2:11j].reshape(3, -1).T
-E, B = sys.compute_fields(grid, t=0.0)
+m = reference_m()  # 4
+print("Ω_k(self at horizon) =", omega_k_at_horizon(m, m))  # == 1.0 (theorem)
+print("curvature norm =", curvature_norm_combinatorial())  # 6^7√3
+print("gamma =", gamma_hqiv())  # 0.4
 ```
 
-## API examples (every module)
+## Key Applied Modules (everything flows from A/Z + foundation)
+
+### Thermodynamics, Phase, Allotropes, Specific Heat, etc. (`pyhqiv.thermo`)
+Full first-principles from the axiom (no DAC/ref data). Inputs are just composition (Z/A or formula).
 
 ```python
-import numpy as np
-from pyhqiv import (
-    # Constants (paper values)
-    GAMMA, ALPHA, T_PL_GEV, T_LOCK_GEV, T_CMB_K, M_TRANS,
-    COMBINATORIAL_INVARIANT, OMEGA_TRUE_K_PAPER, LAPSE_COMPRESSION_PAPER,
-    HBAR_C_EV_ANG, A_LOC_ANG,
-    # Lattice & cosmology
-    DiscreteNullLattice,
-    HQIVCosmology,
-    # Phase lift
-    HQIVPhaseLift,
-    # Algebra (so(8), hypercharge)
-    OctonionHQIVAlgebra,
-    # Atom & system
-    HQIVAtom, HQIVSystem,
-    # Fluid (modified NS)
-    f_inertia, g_vac_vector, eddy_viscosity, modified_momentum_rhs,
-    # Molecular (PROtien)
-    molecular,
-    # Waveguide
-    waveguide,
-    # Fields
-    PhaseHorizonFDTD,
-    # Crystal & response
-    HQIVCrystal, hqiv_potential_shift, compute_conductivity, response_tensor_diagonal,
-    # Thermodynamics (phase diagrams, EOS, no reference data)
-    HQIVThermoSystem, compute_free_energy, HQIVHydrogen, PhaseDiagramGenerator,
-    hqiv_answer_thermo, plot_phase_diagram_standard_vs_hqiv, TESTABLE_PREDICTIONS,
+from pyhqiv.thermo import (
+    HQIVThermoSystem, compute_free_energy, hqiv_answer_thermo,
+    PhaseDiagramGenerator, HQIVHydrogen,
+    molar_mass_from_Z, allotrope_theta_modifier,
+    theta_local_from_density, phi_from_rho_T,
+    TESTABLE_PREDICTIONS,
 )
 
-# --- constants ---
-print(GAMMA, COMBINATORIAL_INVARIANT, HBAR_C_EV_ANG)
+# Just A/Z
+M_H2 = molar_mass_from_Z(Z=1, A=2)
+M_H2O = 2 * molar_mass_from_Z(1, 1) + molar_mass_from_Z(8, 16)
+print("M_H2O (kg/mol) from anchors:", M_H2O)
 
-# --- algebra: so(8) closure, hypercharge 4×4 block ---
-alg = OctonionHQIVAlgebra(verbose=False)
-dim, _ = alg.lie_closure_dimension()  # 28
-data = alg.hypercharge_paper_data()
+# Allotropes for same Z (different packing → different effective Θ/ρ)
+mod_ice = allotrope_theta_modifier("ice_ih")
+mod_diamond = allotrope_theta_modifier("diamond")
+mod_graphite = allotrope_theta_modifier("graphite")
 
-# --- lattice & cosmology: δE(m), evolve_to_cmb, Ω_k, ages, lapse ---
-lattice = DiscreteNullLattice(m_trans=500, gamma=0.40)
-result = lattice.evolve_to_cmb(T0_K=2.725)
-delta_E = lattice.get_delta_E_grid()
-cosmo = HQIVCosmology()
-cosmo_result = cosmo.evolve_to_cmb(T0_K=2.725)  # Omega_true_k, 51.2/13.8 Gyr, lapse ≈ 3.96
+# Full system + phase + free energy (composition string or Z-based)
+sys = HQIVThermoSystem(P_Pa=1e5, T_K=300.0, composition="Z=1,A=2")  # or "H2O"
+G, info = compute_free_energy(1e5, 300.0, "H2O")
+print("G, phi, f:", G, info["phi"], info["f_lapse"])
 
-# --- phase: δθ′(E′), ˙δθ′, lapse ---
-phase = HQIVPhaseLift(gamma=0.40)
-dtheta = phase.delta_theta_prime(0.5)
-dot_dtheta = phase.delta_theta_prime_dot(H_homogeneous=1e-18)
+# Answerer (parses questions)
+print(hqiv_answer_thermo("metallic hydrogen transition at 300 K"))  # GPa
+print(hqiv_answer_thermo("silicon melting at 10 GPa"))  # K
 
-# --- atom: local Θ, φ = 2c²/Θ ---
-atom = HQIVAtom(position=(0, 0, 0), charge=1)
-phi = atom.phi_local(np.array([[1.0, 0, 0]]))
-
-# --- system: multi-atom, E/B on grid ---
-sys = HQIVSystem.from_atoms([(0, 0, 0), (1, 0, 0)], charges=[1, -1])
-E, B = sys.compute_fields(np.array([[0.5, 0, 0]]), t=0.0)
-
-# --- fluid: f(a,φ), g_vac, ν_eddy ---
-f = f_inertia(0.1, 1.0)
-g_vac = g_vac_vector(1.0, 0.5, np.ones(3), np.zeros(3))
-nu = eddy_viscosity(Theta_local=1.0, dot_delta_theta=1e-18, l_coh=1e-3, coherence_factor=0.5)
-
-# --- molecular: Θ(Z,coord), bond length, damping, torsion energy ---
-theta_C = molecular.theta_local(6, 2)  # ≈ 1.53 Å
-r_eq = molecular.bond_length_from_theta(1.53, 1.33)
-mag = molecular.damping_force_magnitude(1.0, 0.5, a_loc=1.0)
-
-# Temperature-aware backbone torsion energy and discrete coupling angles for PROtien
-# (angles in radians, Θ in Å, T in K):
-E_residue = molecular.hqiv_energy_for_angles(
-    phi=-1.0,
-    psi=0.5,
-    theta_local_ang=theta_C,
-    temperature=300.0,
-)
-angles, energies, dE = molecular.coupling_angle_energy_profile(
-    "phi",
-    theta_local_ang=theta_C,
-    temperature=300.0,
-    n_states=32,
-)
-
-# --- waveguide: k_c², radius, taper, mode solver ---
-from pyhqiv.waveguide import kc_squared_hqiv, waveguide_radius_constant_phi, hqiv_waveguide_mode_solver
-kc2 = kc_squared_hqiv(omega=2*np.pi*1e9, beta=10.0, m_phase=1, dot_delta_theta=1e-18)
-a = waveguide_radius_constant_phi(phi_target=1e10)
-gx, gy = np.mgrid[0:1:5j, 0:1:5j]
-evals, evecs, mask = hqiv_waveguide_mode_solver(gx, gy, 2*np.pi*1e9, 0.0, n_modes=2)
-
-# --- fields: FDTD ---
-fdtd = PhaseHorizonFDTD(shape=(10, 10, 10), dx=0.1, dt=0.05)
-fdtd.step()
-
-# --- crystal: PBC, Bloch sum ---
-from pyhqiv.atom import HQIVAtom
-atoms = [HQIVAtom([0, 0, 0], 0), HQIVAtom([0.5, 0, 0], 0)]
-crystal = HQIVCrystal(atoms, lattice_vectors=np.eye(3), supercell_shape=(2, 1, 1))
-bloch = crystal.bloch_sum(k_point=[0, 0, 0])
-pos_sc = crystal.supercell_positions()
-
-# --- response: conductivity ---
-sigma = compute_conductivity(omega=1e10, sigma_0=1.0, phi_avg=1e5)
-tensor = response_tensor_diagonal(omega=1e10, dim=3, sigma_0=1.0)
-
-# --- band-gap: potential shift for PySCF ---
-V_shift = hqiv_potential_shift(phi_avg=1e-10, dot_delta_theta_avg=1e-18)
-# Use V_shift in pyscf.pbc as effective potential shift
+# Phase stability, testable predictions, etc.
 ```
 
-## Package layout
+See `tests/test_thermo.py` for A/Z-driven cases (H2, H2O, ice allotrope ~272 K, Si melt, blackbody heat proxies from papers, conductivity/phase stubs) with error bars.
+
+### Orbital / Flyby Anomalies / SPARC Galaxy Rotation (`pyhqiv.orbital`)
+Live HQIV corrections for the orbital_flyby and octonionic_action papers.
+
+```python
+from pyhqiv.orbital import (
+    hqiv_galaxy_rotation_point,
+    hqiv_flyby_inertia_screen,
+    hqiv_inertia_factor, rindler_denominator,
+)
+
+# Galaxy (SPARC-style, exponential disk + inertia + Rindler)
+pt = hqiv_galaxy_rotation_point(
+    radius=10.0, disk_total_mass=5e9, disk_scale_length=1.8,
+    observed_v=110.0, phi_shell=0
+)
+print("a_bary, f_inertia, a_hqiv:", pt["a_bary"], pt["f_inertia"], pt["a_hqiv"])
+
+# Flyby screen (direction-dependent, polar fiber, m_shell)
+screen = hqiv_flyby_inertia_screen(a_loc=9.8, phi=2.0, h_z=0.5, h=1.0, h_ref=1.0, rho_pol=0.5, m_shell=0)
+```
+
+Benchmarks in the master comparison test use live code + paper literature sigmas/error bars (NEAR/Galileo/etc. anomalies, M33 etc. flat curves).
+
+### Other High-Value Modules
+- `pyhqiv.fluid`: `f_inertia(a, φ)`, `g_vac_vector`, `eddy_viscosity` (core for modified NS, inertia screen, flyby/galaxy).
+- `pyhqiv.isotope_ladder` / `pyhqiv.hqiv_nuclei`: Binding, masses, Q-values, half-lives from A/Z + network (Lean mirrors). Used for thermo/nuclear.
+- `pyhqiv.sm_mass_ladder`, `pyhqiv.sm_gr_unification`: Geometric SM masses/couplings from electron anchor + Lean.
+- `pyhqiv.state`, `pyhqiv.carrier` (So8Carrier), `pyhqiv.regimes`: Unified shell/metric/carrier + galactic/blackhole/quantum façades.
+- `pyhqiv.so8_generators`: Lean-certified so(8) (28 dim).
+- Response/semiconductors/crystal/ase: materials (conductivity, band gaps, defects, relaxation) with HQIV φ/lapse corrections.
+- `pyhqiv.thermodynamic_fundamentals`: Entropy from modes, 2nd-law arrow, equilibrium proxies.
+
+Full list in `src/pyhqiv/__init__.py` and the module docstrings (Lean citations everywhere).
+
+## Quickstarts
+
+**Pure geometry / paper foundations (no scales):**
+```python
+from pyhqiv.lightcone import reference_m, omega_k_at_horizon, curvature_norm_combinatorial
+from pyhqiv.metric import gamma_hqiv
+m = reference_m()
+print(omega_k_at_horizon(m, m), curvature_norm_combinatorial(), gamma_hqiv())
+```
+
+**Thermo for real materials (just A/Z):**
+```python
+from pyhqiv.thermo import molar_mass_from_Z, HQIVThermoSystem, hqiv_answer_thermo
+M = molar_mass_from_Z(6)  # carbon
+print(hqiv_answer_thermo("diamond vs graphite density or ice melt"))
+sys = HQIVThermoSystem(1e5, 300.0, composition="Z=6")  # or allotrope-aware
+```
+
+**Orbital benchmarks (live):**
+```python
+from pyhqiv.orbital import hqiv_galaxy_rotation_point, hqiv_flyby_inertia_screen
+# ... as above
+```
+
+See `examples/` (many still reference older surface; the clean ones are in tests + the paper repro scripts).
+
+## Package Layout (current clean rebuild)
 
 | Path | Description |
 |------|-------------|
-| `src/pyhqiv/algebra.py` | Octonion HQIV algebra (so(8) closure, hypercharge 4×4 block) |
-| `src/pyhqiv/lattice.py` | Discrete null lattice, δE(m), T(m), evolve_to_cmb |
-| `src/pyhqiv/phase.py` | HQIVPhaseLift: δθ′(E′), ˙δθ′, ADM lapse compression |
-| `src/pyhqiv/atom.py` | HQIVAtom (position, charge, species, local Θ, φ) |
-| `src/pyhqiv/system.py` | HQIVSystem (multi-atom, monogamy γ, E/B on grid) |
-| `src/pyhqiv/fields.py` | Phase-horizon FDTD / spectral Maxwell (γ(φ/c²)(˙δθ′/c) terms) |
-| `src/pyhqiv/fluid.py` | Modified Navier–Stokes: f_inertia, g_vac, ν_eddy (laminar → standard NS) |
-| `src/pyhqiv/thermo.py` | First-principles thermodynamics: phase diagrams, EOS, critical points (no DAC/reference data) |
-| `src/pyhqiv/perturbations.py` | Unified linear perturbations with lapse/φ: stellar oscillations, fluid stability, phonons, cosmology (stays in main) |
-| `src/pyhqiv/cosmology/` | Package: HQIVCosmology (background), HQIVUniverseEvolver (T_Pl→now map + σ₈), hqiv_cmb wrapper |
-| `src/pyhqiv/cosmology_full.py` | Optional heavy module: σ₈, C_ℓ, universe_evolver, Healpy map, LOS/ISW (install pyhqiv[cosmology]) |
-| `src/pyhqiv/waveguide.py` | HQIV waveguide: k_c²(ω,β,m), constant-φ circle, taper, hyperbolic, mode solver |
-| `src/pyhqiv/molecular.py` | PROtien: Θ(Z, coord), bond_length_from_theta, damping_force_magnitude, torsion energy + coupling-angle profiles |
-| `src/pyhqiv/crystal.py` | HQIVCrystal: PBC, supercell, bloch_sum, reciprocal_vectors; high_symmetry_k_path; hqiv_potential_shift |
-| `src/pyhqiv/response.py` | compute_conductivity, response_tensor_diagonal (phase-horizon corrected) |
-| `src/pyhqiv/ase_interface.py` | HQIVCalculator (ASE: energy, forces, stress); hqiv_energy_at_positions, hqiv_forces_analytic, hqiv_stress_virial |
-| `src/pyhqiv/semiconductors.py` | compute_band_gap, dos, effective_mass, compute_conductivity_tensor, dielectric_function_epsilon |
-| `src/pyhqiv/defects.py` | formation_energy (HQIV vacuum correction), charged_defect_supercell |
-| `src/pyhqiv/export.py` | export_charge_density_vesta, export_charge_density_ovito; pyscf_hqiv_shift |
-| `src/pyhqiv/constants.py` | Paper constants (γ, α, T_Pl, 6^7√3, HBAR_C_EV_ANG, A_LOC_ANG, etc.) |
+| `lightcone.py` | Discrete null lattice, α=3/5, modes, curvature norm, Ω_k, shell shapes (Lean OctonionicLightCone) |
+| `metric.py` | HQVM lapse (1+Φ+φ t), γ=2/5, G_eff(φ)=φ^α, Friedmann (Lean HQVMetric) |
+| `auxiliary_field.py` | φ(m), T(m) ladder (Lean AuxiliaryField + SM_GR_Unification) |
+| `scale_witness.py` | ScaleWitness enum (proton_lockin default), derived masses, local conditions (CMB, earth, H0...), molar_mass_from_Z |
+| `thermo.py` | HQIVThermoSystem, free energy, phase diagrams, EOS, H2 metallic, allotrope modifiers, answerer, specific heat proxies (A/Z driven) |
+| `orbital.py` | Galaxy rotation (SPARC), flyby inertia screens, Rindler, corrections (live for paper benchmarks) |
+| `thermodynamic_fundamentals.py` | Lattice entropy S(m), 2nd-law arrow, equilibrium proxies, blackbody finite sums |
+| `fluid.py` | f_inertia, g_vac, eddy viscosity (core modified NS / inertia screen) |
+| `isotope_ladder.py`, `hqiv_nuclei.py` | A/Z → masses, binding, Q, half-lives, caustics (Lean mirrors) |
+| `sm_mass_ladder.py`, `sm_gr_unification.py` | Geometric SM masses/couplings from electron anchor |
+| `lean_witnesses.py` | Loader for Lean JSON (single source + overlay) |
+| `so8_generators.py`, `carrier.py`, `state.py`, `regimes/` | so(8), carriers, unified HQIVState, galactic/blackhole/quantum façades |
+| `response.py`, `crystal.py`, `semiconductors.py` (if present), `ase_interface.py` | Materials response, conductivity, PBC, ASE calculator with HQIV corrections |
+| (others) | nuclear, modified_maxwell, quantum_*, etc. |
 
-## Paper numbers (reproduced)
+Legacy surface is in `bak/` + `docs/legacy_api_inventory.md`. The rebuild is the forward path.
 
-| Quantity | Value | Source |
-|----------|--------|--------|
-| Ω_k | Dynamic (not constant) | Ω_k(n; N) = Ω_k_true · (∫₀ⁿ shape / ∫₀ᴺ shape); at horizon n=N → Ω_k_true ≈ +0.0098. See `omega_k_at_horizon`, `omega_k_partial` (HQIV_LEAN). |
-| m_trans | 500 | Discrete–continuous transition |
-| γ | 0.40 | Entanglement monogamy |
-| α | 0.60 | G_eff exponent |
-| T_lock | 1.8 GeV | QCD lock-in |
-| 6^7√3 | ≈ 4.849×10^5 | Combinatorial invariant |
-| Wall-clock age | 51.2 Gyr | Lattice → CMB |
-| Apparent age | 13.8 Gyr | ADM lapse compression ≈ 3.96× |
-
-## Tests
-
-Install with dev extras for pytest, then run:
+## Tests, Reproducibility & Paper Coverage
 
 ```bash
-pip install -e ".[dev]"   # or: uv sync --extra dev
-pytest tests/ -v
+pip install -e ".[dev]"
+pytest tests/ -q
+# or focused
+pytest tests/test_all_paper_comparisons_with_errors.py -q
+pytest tests/test_thermo.py -q
 ```
 
-With coverage (optional):
+- `tests/test_all_paper_comparisons_with_errors.py`: Master aggregator for **every** numerical comparison vs experiment in the papers (flyby anomalies with lit sigmas, SPARC curves, masses, bindings, ice/Si melt, blackbody heat ratios, thermo phase/allotrope, etc.). All with explicit error bars + z-scores from PDG/Planck/literature/paper sources. Live calculator code where possible.
+- `tests/test_thermo.py`, `test_binding_energy_vs_pdg.py`, `test_hadron_masses_with_errors.py`, `test_lepton_resonance.py`, `test_isotope_ladder.py`, `test_nuclear*.py`, `test_paper_numbers.py`, `test_sm_mass_ladder.py`, etc.: Specific coverage with error bars.
+- Many use z-scores / loose envelopes (model gaps are real; Arena improves them).
 
-```bash
-pip install pytest-cov
-pytest tests/ -v --cov=pyhqiv --cov-report=term-missing --cov-report=html
-# open htmlcov/index.html
-```
+Reproduce paper numbers / figures with current examples (update as modules stabilize) or the paper script bundles in `HQIV_LEAN/papers/*/scripts/`.
 
-CI runs pytest with `--cov=pyhqiv --cov-report=term-missing --cov-report=html` and uploads the HTML report as an artifact (7-day retention). Config: `.coveragerc`. To add a coverage badge, integrate [Codecov](https://codecov.io) or [Coveralls](https://coveralls.io) and add their badge to this README.
+## HQIV Arena & How to Submit PRs / Contribute
 
-- **`tests/test_paper_numbers.py`** — Paper predictions: Ω_true_k, γ, combinatorial invariant, lapse factor, lattice δE(m) / mode counts to 6 decimal places.
-- **`tests/test_physical_values.py`** — Known physical/experimental values: CODATA (c, ℏ, k_B, Planck length), Planck 2018 (T_CMB, age), curvature bounds; **Standard Model** (fine structure 1/137.036, sin²θ_W at M_Z); **hydrogen/oxygen coupling** (Θ in Å via `theta_for_atom`, bond-length scale, H > O ordering); **ideal valence angles** (carbon sp³ 109.47°, oxygen basin); **nuclear binding energy** (B_ALPHA_MEV = 28.3 MeV, He-4/C-12/O-16 ballpark when HQIV B > 0).
-- Other tests: ASE calculator (energy/forces/stress), crystal (PBC, k-path), fluid, semiconductors (band_gap, DOS, effective_mass, dielectric), defects, export, thermo (EOS, phase diagram, hqiv_answer_thermo).
+pyhqiv + hqiv-lean = branch-based, CI-driven physics improvement platform.
 
-## Reproducibility
+**To participate (recommended even for humans):**
 
-From the repo root (or with `pyhqiv` on PYTHONPATH):
+1. `hqiv-arena login` (GitHub PAT with repo scope).
+2. `hqiv-arena clone` (or `hqiv-arena clone my-workspace`) — sets up symlinks to HQIV_LEAN.
+3. `cd .../pyhqiv; hqiv-arena setup`
+4. `hqiv-arena run` — runs alignment + tests + sigma scoring locally.
+5. Make changes:
+   - **New pure function / correction** (second-order terms etc.): put in `src/pyhqiv/` (no constants!). Use foundation + witnesses only.
+   - **New feature** (e.g. better allotrope, conductivity tensor, new orbital channel): add the code + **new tests** with error bars from source material. Inputs minimal (A/Z where applicable).
+   - Register metrics if scoring impact: `from pyhqiv.arena.metrics import register_metric, Metric` (see examples in tests or `arena/metrics.py`).
+6. `hqiv-arena submit --note-file progress.md --model "YourName/Agent"` — creates branch, PR, runs full CI (Lean cert + 5 gates).
+7. Only improving, aligned changes that beat baseline σ (no protected regressions on Ω_k, lapse, proton anchor, so(8)=28, derived masses, flyby/SPARC/thermo residuals, etc.) merge. Leaderboard updates on main.
 
-```bash
-python examples/reproduce_paper.py           # all paper table values
-python examples/reproduce_paper.py --plot   # tables + figures (requires matplotlib)
-python examples/reproduce_paper.py --plot --pyvista  # add 3D figure (requires pyvista)
-```
+**Gates (see `.github/workflows/hqiv-arena.yml` and CONTRIBUTING.md):**
+1. Lean certificate (lake build, no sorrys).
+2. Lean ↔ Python alignment (`scripts/validate_hqiv_alignment.py`).
+3. Full pytest.
+4. Sigma-everywhere scoring (deltas vs baseline; protected regressions penalized).
+5. Leaderboard + badges on merge.
 
-Figures are written to `examples/reproduce_paper_figures/`. For a thin HQIV→folding minimizer shim (ASE energy/forces from `HQIVSystem`), see `examples/folding_shim_example.py`. Thermodynamics examples (phase diagrams, no reference data): `examples/thermo_metallic_hydrogen_phase_diagram.py`, `examples/thermo_silicon_melting.py`, `examples/thermo_argon_critical.py`, `examples/thermo_answer_any_question.py`, `examples/thermo_ase_phase_stability.py`.
+**Templates & details:**
+- `arena/templates/new_benchmark_test.py.template`
+- `CONTRIBUTING.md` (full workflow, adding benchmarks, badges)
+- `arena/SKILL.md` (hqiv-arena CLI reference)
+- Live: https://disregardfiat.tech/#arena (pulls `arena/leaderboard.json`)
 
-## Thermodynamics (first principles, no DAC/reference data)
+Main is sacred. Serious work on branches. Use `hqiv-arena sync` / `reset` to stay at frontier.
 
-From the single axiom **E_tot = m c² + ħ c/Δx** with **Δx ≤ Θ_local(ρ, T)** the package derives phase diagrams, equations of state, and critical points without diamond-anvil or empirical databases:
+**License note:** MIT with Government Use Restriction (see full text in repo).
 
-- **HQIVThermoSystem**, **compute_free_energy(P, T, composition, gamma)** — Gibbs free energy with full φ and lapse correction.
-- **HQIVEquationOfState**, **HQIVIdealGas**, **HQIVRealGas**, **HQIVHydrogen** — EOS with lapse; metallic H2 transition at ρ ≈ 0.6–1.0 g/cm³ from φ only.
-- **PhaseDiagramGenerator** — P–T coexistence via Gibbs minimization (G1 = G2).
-- **hqiv_answer_thermo(question)** — One-function pipeline: parse question → build system from axiom → return answer + plot code.
-- **thermo_fluid_lapse**, **thermo_crystal_phi**, **thermo_ase_phase_stability** — Hooks with `fluid.py`, `crystal.py`, `ase_interface.py`.
-- **TESTABLE_PREDICTIONS**, **plot_phase_diagram_standard_vs_hqiv** — Falsifiable predictions and side-by-side standard vs HQIV plots.
+## Reproducibility & Paper Numbers
 
-Enables the full "space model": solar core, rocket propellants, high-z stellar evolution from one equation → entire phase diagram.
+The calculator reproduces Lean/paper foundations (Ω_k(N;N)=1, curvature norm = 6^7√3, α=3/5, γ=2/5, referenceM=4, so(8)=28, derived masses, etc.) via witnesses + pure code. See `tests/test_paper_numbers.py` and the master comparison test.
 
-## Advanced modeling (perturbations)
+For full paper tables/figures, use the scripts bundles shipped with each paper on Zenodo (or the Lean targets).
 
-Unified linear perturbations with full HQIV lapse/φ corrections — stellar oscillations (Kepler/TESS), fluid instabilities, phonon spectra, cosmological density perturbations:
+## Further Reading
 
-```python
-from pyhqiv import HQIVPerturbations, HQIVSolarCore
+- Papers + scripts: `HQIV_LEAN/papers/` (thermodynamics_arrow, orbital_flyby, octonionic_action, tuft_sm_lagrangian, nucleon_binding, etc.)
+- Lean: `HQIV_LEAN/hqiv-lean/Hqiv/Geometry/`, `Physics/`, etc.
+- hqiv_lab (allotropes/condensed phase): `HQIV_LEAN/hqiv_lab/`
+- Docs in this repo: `docs/`
+- Arena CLI skill: `arena/SKILL.md`
 
-background = HQIVSolarCore()  # or HQIVSystem, future HQIVStar/HQIVNeutronStar
-pert = HQIVPerturbations(background=background)
-modes = pert.stellar_oscillations(l=1, n_max=5)
-print([m.period for m in modes])  # periods with lapse-compressed frequencies
-print(pert.summary())
-```
+Contributions that add coverage (more paper comparisons with error bars, new pure modules) or improve σ are especially welcome.
 
-**CMB pipeline:** Full universe evolution to a synthetic CMB map is in `docs/HQIV_CMB_Pipeline.md`. Use **HQIVUniverseEvolver** (`pyhqiv.cosmology`) with `run_from_T_Pl_to_now()` for a full-sky map (µK) and σ₈; it delegates to the optional module `pyhqiv.cosmology_full`. **Seed from bulk (paper-authoritative):** Until baryogenesis is complete, the pipeline should be seeded by HQIV `horizon_modes/python/bulk.py`. Call `get_bulk_seed()` (when the HQIV repo is available) and pass it as `bulk_seed` to the evolver or `hqiv_cmb`; then Ω_k, H₀, and η come from bulk. **Caveat:** the current map and σ₈ are **phenomenological** (C_ℓ template + synfast, growth-based σ₈); the first-principles chain (primordial seeding → forward evolution → LOS projection → anafast) is not yet implemented. See `cmb_pipeline_status()` and doc §0.1 for the gap.
-
-## Materials / semiconductors
-
-For theorists in materials and semiconductors, the package provides:
-
-- **Full ASE Calculator** — geometry relaxation with HQIV potential:
-  ```python
-  from ase.optimize import BFGS
-  from pyhqiv import HQIVCalculator
-  calc = HQIVCalculator(gamma=0.40)
-  atoms.calc = calc
-  BFGS(atoms).run()   # get_potential_energy(), get_forces(), get_stress()
-  ```
-  See `examples/relax_with_hqiv.py`.
-
-- **HQIVCrystal** — PBC, supercell, Bloch sum; **high_symmetry_k_path()** for k-path generation (e.g. `"GXWG"`).
-
-- **Semiconductor API** — `compute_band_gap()`, `dos()`, `effective_mass()`, `compute_conductivity_tensor()`, `dielectric_function_epsilon()` with HQIV corrections. See `examples/silicon_bandgap_hqiv.py`.
-
-- **Defect utilities** — `formation_energy()` with HQIV vacuum correction; `charged_defect_supercell()` for charged-defect supercells.
-
-- **Hybrid interfaces** — `hqiv_potential_shift()` (and `pyscf_hqiv_shift()`) for PySCF periodic band structure; `export_charge_density_vesta()` / `export_charge_density_ovito()` for charge-density export with HQIV modulation.
-
-## Extensibility
-
-Custom lattices and phase lifts can implement the public protocols/base classes:
-
-- **NullLatticeProtocol** / **NullLatticeBase** — implement `shell_temperature`, `delta_E`, `mode_count_per_shell`, `omega_k_true`, `evolve_to_cmb`, `get_delta_E_grid`, `get_cumulative_mode_counts`.
-- **PhaseLiftProtocol** / **PhaseLiftBase** — implement `delta_theta_prime`, `delta_theta_prime_dot`, `lapse_compression`, `maxwell_lift_coefficient`.
-
-Subclass the base classes for a new lattice or phase model; the built-in `DiscreteNullLattice` and `HQIVPhaseLift` satisfy the protocols by default.
-
-## Pre-commit
-
-```bash
-pip install pre-commit && pre-commit install
-```
-
-Runs ruff (lint + format), mypy, and generic hooks on commit. Config: `.pre-commit-config.yaml`.
-
-For releases, the CI build runs `scripts/update_citation_cff.py` to set `CITATION.cff` version and `date-released` from the current tag/date. You can run it manually with `--version X.Y.Z --date YYYY-MM-DD` to sync before a release.
-
-## Contributing
-
-Public contribution and feedback are greatly appreciated. Please open issues or pull requests on [GitHub](https://github.com/disregardfiat/pyhqiv). All features are experimental; we welcome bug reports, documentation improvements, and suggestions.
-
-**License note (March 2026)**  
-This project is released under the MIT License **with an explicit Government Use Restriction**.  
-Governments worldwide may **not** use, fork, or run this software without first purchasing a paid seat from me (Steven Ettinger). Seat availability and pricing are at my sole discretion.  
-Individuals, companies, universities, and non-profits continue to enjoy full MIT rights.
+Happy σ reduction!

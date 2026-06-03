@@ -1,6 +1,11 @@
-# Constants audit: paper-derived only + unit conversions
+# Constants audit: paper-derived only + unit conversions (2026 arena rules)
 
-**Rule:** No constants in the repo except (1) values derived from the HQIV paper, (2) unit conversion tables for the module to be widely useful.
+**Rule:** Absolutely zero constants in `src/pyhqiv/*.py` (other than geometry necessities: π, √3 for the unit-cube half-diagonal, 2π for phase, natural-unit 1.0). All scale witnesses and local conditions (proton mass anchor, CMB T0 + unc, earth surface g, vacuum ε₀/μ₀, ...) live in:
+- `src/pyhqiv/witnesses.json` (Lean-derived, via overlay when available)
+- `src/pyhqiv/local_conditions.json` (test/applied "local" values with sources)
+- `tests/setup_defaults.py` + `tests/data/*_with_errors.py` (explicit (central, ±err, "Source from PDG/Planck/CODATA/...") for every experimental comparison)
+
+Measurement tables and bare literals are forbidden in src (enforced by `tests/test_src_no_measurement_references.py` + CI). New arena contributions (functions or features) must obey this + ship tests with error bars.
 
 ## Single source: `src/pyhqiv/constants.py`
 

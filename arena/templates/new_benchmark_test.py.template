@@ -1,0 +1,80 @@
+"""
+Template for a new HQIV Arena benchmark + test.
+
+Copy to tests/test_my_new_thing.py (or appropriate existing test file),
+implement the physics, add the tests, and (recommended) register an Arena metric
+so improvements are scored on the public leaderboard.
+
+Rules (strict):
+- Absolutely zero constants in any new src/ functions (only geometry: pi, sqrt(3) for cube, 2pi phase, natural 1.0). All second-order corrections / dynamic terms must be pure functions of their inputs.
+- Every new feature MUST have new tests.
+- All tests that compare to experiment MUST carry (central, +/- err) tuples with explicit source (PDG, CODATA, Planck, paper table, ...). Use tests/setup_defaults.py or tests/data/*_with_errors.py .
+- The arena CI will run sigma-everywhere scoring; new functions win only if they beat baseline sigma on protected + broad metrics with no regressions.
+- New metrics registered via pyhqiv.arena.metrics.register_metric participate automatically.
+- Lean <-> py alignment remains a hard gate.
+"""
+
+from __future__ import annotations
+
+import math
+
+import pytest
+
+# Example: suppose we added a phase diagram generator in pyhqiv.phase
+# from pyhqiv.phase import compute_phase_diagram, phase_boundary_stability
+
+
+def test_phase_diagram_runs_and_is_deterministic():
+    # Replace with real call. Use fixed parameters.
+    # diag = compute_phase_diagram(m_range=(0, 20), T0=1.8, seed=42)
+    # assert diag is not None
+    # assert len(diag.boundaries) > 0
+    assert True  # placeholder
+
+
+def test_phase_boundaries_thermodynamically_consistent():
+    # Real checks would include:
+    # - boundaries are monotonic or satisfy Gibbs phase rule in the regime
+    # - stability (second derivative signs, or positive definite Hessian proxy)
+    # - consistency with Lean-derived shell quantities (reference_m, omega_k, curvature)
+    # - no NaN / inf on the grid
+    assert True  # placeholder
+
+
+def test_phase_quality_is_registered_in_arena():
+    """
+    Optional but recommended for scoring impact.
+
+    After implementing a real quality metric, register it so "new feature → new score".
+    The registration can live here or in a small dedicated module imported by CI.
+    """
+    try:
+        from pyhqiv.arena.metrics import register_metric, Metric
+
+        def _phase_quality() -> float:
+            # Compute a single scalar quality / error that lower-is-better or higher-is-better
+            # (the scoring engine treats it as "value vs reference"; you choose the sign via reference).
+            # Must be deterministic.
+            # Example: return 1.0 - boundary_error_fraction(...)
+            return 0.96
+
+        register_metric(
+            Metric(
+                name="phase_diagram_consistency_v1",
+                compute=_phase_quality,
+                reference=lambda: 0.95,  # or load from a golden / witness
+                protected=False,
+                weight=1.0,
+                unit="",
+                tolerance=0.005,
+                desc="Phase diagram physical consistency (boundaries + thermodynamic stability)",
+            )
+        )
+        # If we got here, registration succeeded for this process
+        assert True
+    except Exception as e:
+        pytest.skip(f"arena metrics not available in this env: {e}")
+
+
+# If your benchmark produces golden/reference outputs, commit them under
+# arena/goldens/ or tests/data/ and load them here for reproducibility checks.
