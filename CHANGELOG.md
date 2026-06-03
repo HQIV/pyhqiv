@@ -28,4 +28,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - (None in this release.)
 
-[0.4.0]: https://github.com/disregardfiat/pyhqiv/releases/tag/v0.4.0
+[0.4.0]: https://github.com/HQIV/pyhqiv/releases/tag/v0.4.0
