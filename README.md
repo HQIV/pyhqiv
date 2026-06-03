@@ -1,10 +1,10 @@
 # pyhqiv — Horizon-Quantized Informational Vacuum (HQIV) Calculator
 
 [![PyPI version](https://badge.fury.io/py/pyhqiv.svg)](https://badge.fury.io/py/pyhqiv)
-[![CI](https://github.com/disregardfiat/pyhqiv/actions/workflows/ci.yml/badge.svg)](https://github.com/disregardfiat/pyhqiv/actions/workflows/ci.yml)
+[![CI](https://github.com/HQIV/pyhqiv/actions/workflows/ci.yml/badge.svg)](https://github.com/HQIV/pyhqiv/actions/workflows/ci.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18794889.svg)](https://doi.org/10.5281/zenodo.18794889)
 
-> **⚠️ Experimental status.** All features in this package are experimental. APIs and numerical results may change. Public contribution and feedback are greatly appreciated — please open issues or pull requests on [GitHub](https://github.com/disregardfiat/pyhqiv).
+> **⚠️ Experimental status.** All features in this package are experimental. APIs and numerical results may change. Public contribution and feedback are greatly appreciated — please open issues or pull requests on [GitHub](https://github.com/HQIV/pyhqiv).
 
 **pyhqiv** is the clean, first-principles Python calculator for the HQIV framework (discrete null-lattice combinatorics + horizon monogamy + octonionic carriers). It exactly mirrors the Lean formalization in [HQIV/hqiv-lean](https://github.com/HQIV/hqiv-lean) and the paper series in `HQIV_LEAN/papers/`.
 
@@ -41,7 +41,7 @@ pip install pyhqiv
 From source (editable, for development/arena):
 
 ```bash
-git clone https://github.com/disregardfiat/pyhqiv.git && cd pyhqiv
+git clone https://github.com/HQIV/pyhqiv.git && cd pyhqiv
 pip install -e ".[dev]"
 ```
 

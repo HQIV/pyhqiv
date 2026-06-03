@@ -56,6 +56,21 @@ def test_arena_badges_award_logic():
     assert "sigma-improver" not in b2  # regression present
 
 
+def test_source_integrity_script_passes():
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "check_arena_source_integrity.py"
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=script.parents[1],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
 def test_alignment_script_runs_as_module():
     # Just import + basic structure; the full gate is exercised in CI and manual runs
     import runpy

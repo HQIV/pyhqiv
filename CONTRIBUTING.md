@@ -26,8 +26,8 @@ All development happens on branches:
    - See the workflow in hqiv-lean and the lean job in pyhqiv's arena workflow.
 
 2. **Lean ↔ Python Alignment Gate** (hard)
-   - `python scripts/validate_hqiv_alignment.py`
-   - Must pass 100%. Uses Lean-exported `witnesses.json` + functional mirror checks in pyhqiv (lightcone, metric, so8 generators, etc.).
+   - `python scripts/check_arena_source_integrity.py` — AST gate on `lightcone.py` / `metric.py` (no import creep, no literal-return cheats in Ω_k mirrors).
+   - `python scripts/validate_hqiv_alignment.py` — must pass 100%. Uses Lean-exported `witnesses.json` + functional mirror checks in pyhqiv (lightcone, metric, so8 generators, etc.).
    - If you changed a Lean definition that affects a numerical value, update the export and the py mirror (or the alignment will fail).
 
 3. **Python Test Gate** (hard)

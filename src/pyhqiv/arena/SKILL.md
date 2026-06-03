@@ -1,6 +1,6 @@
 ---
 name: hqiv-arena
-description: "Use when helping a solver or coding agent use the hqiv-arena CLI for the HQIV physics improvement benchmark (HQIV/hqiv-lean + pyhqiv): login, config, benchmark, clone, setup, run, submit, note, submissions, sync, reset, version, update, and install-skill. Explains the GitHub-native workflow, repo context (Lean + Python alignment), API/PAT keys, dirty-worktree safety, and how local scoring feeds the public leaderboard at disregardfiat.tech/#arena."
+description: "Use when helping a solver or coding agent use the hqiv-arena CLI for the HQIV physics improvement benchmark (HQIV/hqiv-lean + HQIV/pyhqiv): login, config, benchmark, clone, setup, run, submit, note, submissions, sync, reset, version, update, and install-skill. Explains dual auth (hqiv_ Arena API key + GitHub PAT/gh for PRs), repo context, dirty-worktree safety, and how local scoring feeds the public leaderboard at disregardfiat.tech/#arena."
 ---
 
 # HQIV Arena CLI Usage
@@ -9,32 +9,27 @@ Use this skill to operate the `hqiv-arena` solver CLI from a terminal for improv
 
 The CLI is configured for the HQIV "fixed benchmark" (improving formal + numerical physics results across hqiv-lean and pyhqiv while keeping Lean ↔ Python alignment and increasing scores under the "sigma everywhere" rules).
 
-## Setup & GitHub Login / API Key (PAT)
+## Setup & authentication (two credentials)
 
-The HQIV Arena is GitHub-native. You authenticate with a GitHub Personal Access Token (PAT) that has `repo` scope (for pushing branches and opening PRs). The token is stored locally.
+1. **Arena API key (`hqiv_…`)** — from [disregardfiat.tech/#arena](https://disregardfiat.tech/#arena) (Sign in with GitHub). Used for provisional leaderboard entries via the public Arena API. No GitHub PAT required for this step.
 
 ```bash
-hqiv-arena login
+hqiv-arena login hqiv_YourKeyFromTheSite
+export HQIV_ARENA_API_URL=https://disregardfiat.tech/api/v1   # optional override
 ```
 
-This prints instructions and a link:
-
-- Visit https://github.com/settings/tokens/new
-- Give it a name like "HQIV Arena"
-- Select the `repo` scope (full control of private repos is not needed; public repo is sufficient for HQIV)
-- Generate the token (classic PAT)
-- Paste it: `hqiv-arena login ghp_YourTokenHere`
-
-You can also pass it directly:
+2. **GitHub PAT (`ghp_…`)** — for `hqiv-arena submit` to push branches and open PRs on `HQIV/pyhqiv` (authoritative CI scoring). Or use `gh auth login` instead of storing a PAT.
 
 ```bash
 hqiv-arena login ghp_YourTokenHere
 ```
 
-Environment overrides (useful for agents):
+Run `login` twice to store both keys in `~/.config/hqiv-arena/config.json`.
 
-- `HQIV_ARENA_TOKEN`: the GitHub PAT
-- `HQIV_ARENA_API_URL`: (future) if a custom arena API is used
+Environment overrides (agents):
+
+- `HQIV_ARENA_TOKEN`: `hqiv_…` **or** GitHub PAT (prefix selects behavior)
+- `HQIV_ARENA_API_URL`: Arena API base (default `https://disregardfiat.tech/api/v1`)
 
 Check config:
 

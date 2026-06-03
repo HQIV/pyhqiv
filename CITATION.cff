@@ -7,10 +7,10 @@ authors:
     orcid: ""
 date-released: 2026-02-27
 doi: 10.5281/zenodo.18794889
-url: "https://github.com/disregardfiat/pyhqiv"
+url: "https://github.com/HQIV/pyhqiv"
 version: "0.3.0"
 license: MIT
-repository-code: "https://github.com/disregardfiat/pyhqiv"
+repository-code: "https://github.com/HQIV/pyhqiv"
 preferred-citation:
   type: article
   title: "Horizon-Quantized Informational Vacuum (HQIV): A Unified Framework from Causal Horizon Monogamy and Discrete Null-Lattice Combinatorics"

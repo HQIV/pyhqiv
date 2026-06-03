@@ -46,9 +46,9 @@ dev = ["pytest>=7", "pytest-cov>=4", "matplotlib>=3.5"]
 all = ["pyhqiv[ase,mda,qutip,jax,pyvista]"]
 
 [project.urls]
-Documentation = "https://github.com/disregardfiat/pyhqiv"
-Repository = "https://github.com/disregardfiat/pyhqiv"
-"Bug Tracker" = "https://github.com/disregardfiat/pyhqiv/issues"
+Documentation = "https://github.com/HQIV/pyhqiv"
+Repository = "https://github.com/HQIV/pyhqiv"
+"Bug Tracker" = "https://github.com/HQIV/pyhqiv/issues"
 
 [project.scripts]
 hqiv-arena = "pyhqiv.arena_cli:main"

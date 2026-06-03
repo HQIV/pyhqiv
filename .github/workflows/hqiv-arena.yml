@@ -140,6 +140,9 @@ jobs:
           path: _lean_artifacts
         continue-on-error: true
 
+      - name: Protected mirror source integrity (AST gate)
+        run: python3 scripts/check_arena_source_integrity.py --verbose
+
       - name: Run Lean ↔ Python Alignment Gate
         id: align
         run: |
@@ -247,7 +250,7 @@ jobs:
         # On branches we compare against it; on main we will update it after merge.
         run: |
           curl -fsSL -o arena/baseline.json \
-            "https://raw.githubusercontent.com/disregardfiat/pyhqiv/main/arena/baseline.json" || \
+            "https://raw.githubusercontent.com/HQIV/pyhqiv/main/arena/baseline.json" || \
             echo '{"overall_score": 1000, "metrics": []}' > arena/baseline.json
           mkdir -p arena
 
@@ -296,7 +299,7 @@ jobs:
           Full results artifact: `arena-score-${{ github.run_id }}` → `arena_results.json`
 
           *Sigma everywhere*: broad error reduction across observables is rewarded. Single-metric gaming is discouraged.
-          See [CONTRIBUTING.md](https://github.com/disregardfiat/pyhqiv/blob/main/CONTRIBUTING.md#hqiv-arena) for details.
+          See [CONTRIBUTING.md](https://github.com/HQIV/pyhqiv/blob/main/CONTRIBUTING.md#hqiv-arena) for details.
           """
           pr = os.environ.get("PR_NUMBER") or "${{ github.event.number }}"
           if pr and pr != "null":

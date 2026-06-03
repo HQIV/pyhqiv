@@ -73,7 +73,8 @@ SKILL_NAME = "hqiv-arena"
 # and use the client_id here. For now we guide users to PATs (simpler + no app approval).
 GITHUB_DEVICE_CLIENT_ID = "Iv1.b507a08c7e8e4a2c"  # placeholder; real one would be set
 
-DEFAULT_API_BASE = "https://api.github.com"
+DEFAULT_GITHUB_API = "https://api.github.com"
+DEFAULT_ARENA_API = "https://disregardfiat.tech/api/v1"
 
 CONFIG_ENV_TOKEN = "HQIV_ARENA_TOKEN"
 CONFIG_ENV_API = "HQIV_ARENA_API_URL"
@@ -83,22 +84,48 @@ LOCAL_GIT_CONFIG_KEY = "hqiv-arena.workspace"
 
 # The two repos that make up the HQIV benchmark workspace
 HQIV_LEAN_REPO = "https://github.com/HQIV/hqiv-lean.git"
-PYHQIV_REPO = "https://github.com/disregardfiat/pyhqiv.git"
+PYHQIV_REPO = "https://github.com/HQIV/pyhqiv.git"
+PYHQIV_GITHUB_WEB = "https://github.com/HQIV/pyhqiv"
 
 
 @dataclass
 class Config:
-    token: Optional[str] = None
-    api_base_url: str = DEFAULT_API_BASE
+    arena_api_key: Optional[str] = None
+    github_token: Optional[str] = None
+    arena_api_url: str = DEFAULT_ARENA_API
+    github_api_base: str = DEFAULT_GITHUB_API
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"token": self.token, "apiBaseUrl": self.api_base_url}
+        return {
+            "arenaApiKey": self.arena_api_key,
+            "githubToken": self.github_token,
+            "arenaApiUrl": self.arena_api_url,
+            "githubApiBase": self.github_api_base,
+        }
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "Config":
+        legacy = d.get("token")
+        arena_key = d.get("arenaApiKey")
+        gh_token = d.get("githubToken")
+        if legacy and not arena_key and not gh_token:
+            if str(legacy).startswith("hqiv_"):
+                arena_key = legacy
+            else:
+                gh_token = legacy
+        arena_url = d.get("arenaApiUrl", DEFAULT_ARENA_API)
+        gh_api = d.get("githubApiBase", DEFAULT_GITHUB_API)
+        legacy_api = d.get("apiBaseUrl")
+        if legacy_api:
+            if "disregardfiat.tech" in str(legacy_api) or str(legacy_api).rstrip("/").endswith("/api/v1"):
+                arena_url = legacy_api
+            else:
+                gh_api = legacy_api
         return cls(
-            token=d.get("token"),
-            api_base_url=d.get("apiBaseUrl", DEFAULT_API_BASE),
+            arena_api_key=arena_key,
+            github_token=gh_token,
+            arena_api_url=arena_url,
+            github_api_base=gh_api,
         )
 
 
@@ -127,12 +154,66 @@ def write_config(cfg: Config) -> None:
     p.chmod(0o600)
 
 
-def get_effective_token(cfg: Config) -> Optional[str]:
-    return os.environ.get(CONFIG_ENV_TOKEN) or cfg.token
+def _env_token() -> Optional[str]:
+    return os.environ.get(CONFIG_ENV_TOKEN)
 
 
-def get_effective_api_base(cfg: Config) -> str:
-    return os.environ.get(CONFIG_ENV_API) or cfg.api_base_url
+def is_arena_api_key(token: str) -> bool:
+    return token.startswith("hqiv_")
+
+
+def is_github_pat(token: str) -> bool:
+    return token.startswith(("ghp_", "github_pat_", "gho_", "ghu_", "ghs_", "ghr_"))
+
+
+def get_arena_api_key(cfg: Config) -> Optional[str]:
+    t = _env_token()
+    if t and is_arena_api_key(t):
+        return t
+    return cfg.arena_api_key
+
+
+def get_github_token(cfg: Config) -> Optional[str]:
+    t = _env_token()
+    if t and not is_arena_api_key(t):
+        return t
+    return cfg.github_token
+
+
+def get_arena_api_url(cfg: Config) -> str:
+    return (os.environ.get(CONFIG_ENV_API) or cfg.arena_api_url).rstrip("/")
+
+
+def get_github_api_base(cfg: Config) -> str:
+    return cfg.github_api_base.rstrip("/")
+
+
+def arena_api_request(
+    cfg: Config,
+    method: str,
+    path: str,
+    body: Optional[Dict[str, Any]] = None,
+    *,
+    api_key: Optional[str] = None,
+) -> Dict[str, Any]:
+    key = api_key or get_arena_api_key(cfg)
+    if not key:
+        raise ValueError("no Arena API key (hqiv_…); sign in at https://disregardfiat.tech/#arena")
+    url = f"{get_arena_api_url(cfg)}{path}"
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Arena API HTTP {e.code}: {detail}") from e
 
 
 def current_skill_install_targets() -> Dict[str, Path]:
@@ -242,53 +323,66 @@ def ensure_clean_worktree(cwd: Optional[Path] = None, force: bool = False) -> No
         pass  # not a git repo or other; proceed with caution
 
 
-# --- Login (GitHub PAT + optional device flow guidance) ----------------------
+# --- Login (Arena API key and/or GitHub PAT) ---------------------------------
 
 def do_login(token: Optional[str], api: Optional[str]) -> None:
     cfg = read_config()
     if api:
-        cfg.api_base_url = api
+        if "github.com" in api or "api.github" in api:
+            cfg.github_api_base = api.rstrip("/")
+        else:
+            cfg.arena_api_url = api.rstrip("/")
 
     if not token:
-        print("HQIV Arena uses a GitHub Personal Access Token (PAT) with 'repo' scope.")
-        print("This lets the CLI push branches and open PRs on your behalf.")
+        print("HQIV Arena supports two credentials (you can run login twice to store both):")
         print()
-        print("1. Go to: https://github.com/settings/tokens/new")
-        print("2. Name it 'HQIV Arena', select the 'repo' scope.")
-        print("3. Generate token and paste it below.")
+        print("  A) Arena API key (hqiv_…) — from https://disregardfiat.tech/#arena")
+        print("     Sign in with GitHub on the site; copy the one-time hqiv_ key.")
+        print("     Used for provisional leaderboard entries via POST /api/v1/submissions.")
         print()
-        print("Alternatively, if you have the GitHub CLI installed and logged in:")
-        print("   gh auth login")
-        print("   hqiv-arena login   # will try to use your gh token")
+        print("  B) GitHub PAT (ghp_… / github_pat_…) with 'repo' scope — for push + PR.")
+        print("     Or use: gh auth login  (then submit can use gh without storing a PAT).")
         print()
-        token = input("Paste GitHub token (ghp_... or github_pat_...): ").strip()
+        token = input("Paste token (hqiv_… or GitHub PAT): ").strip()
 
     if not token:
         print("No token provided.", file=sys.stderr)
         sys.exit(1)
 
     token = token.strip()
-    cfg.token = token
 
-    # Verify very lightly (we don't want to require extra scopes for /user if possible)
-    try:
-        # Use gh if present and authed, else direct
-        if has_gh() and gh_auth_status():
-            print("Using existing gh authentication where possible.")
-        else:
-            # Simple validation: hit a public-ish endpoint with the token
-            req = urllib.request.Request(
-                f"{get_effective_api_base(cfg)}/user",
-                headers={"Authorization": f"token {token}", "Accept": "application/vnd.github+json"},
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                user = json.loads(resp.read())
-                print(f"Token validated for GitHub user: {user.get('login')}")
-    except Exception as e:
-        print(f"Warning: could not fully validate token against GitHub ({e}). Storing anyway.")
+    if is_arena_api_key(token):
+        cfg.arena_api_key = token
+        try:
+            me = arena_api_request(cfg, "GET", "/me", api_key=token)
+            who = me.get("github") or me.get("label") or me.get("id")
+            print(f"Arena API key validated ({who}).")
+        except Exception as e:
+            print(f"Warning: could not validate Arena API key ({e}). Storing anyway.")
+    elif is_github_pat(token) or token:
+        cfg.github_token = token
+        try:
+            if has_gh() and gh_auth_status():
+                print("GitHub CLI is authenticated; PAT also stored for API fallback.")
+            else:
+                req = urllib.request.Request(
+                    f"{get_github_api_base(cfg)}/user",
+                    headers={
+                        "Authorization": f"token {token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    user = json.loads(resp.read())
+                    print(f"GitHub token validated for user: {user.get('login')}")
+        except Exception as e:
+            print(f"Warning: could not fully validate GitHub token ({e}). Storing anyway.")
+    else:
+        print("Unrecognized token prefix. Expected hqiv_… or ghp_… / github_pat_…", file=sys.stderr)
+        sys.exit(1)
 
     write_config(cfg)
-    print(f"Logged in. Config saved to {config_path()}")
+    print(f"Config saved to {config_path()}")
 
 
 # --- Clone -------------------------------------------------------------------
@@ -397,6 +491,15 @@ def do_run(cwd: Optional[Path] = None) -> None:
     env = os.environ.copy()
     env["PYTHONPATH"] = str(py_root / "src") + os.pathsep + env.get("PYTHONPATH", "")
 
+    integrity_script = py_root / "scripts" / "check_arena_source_integrity.py"
+    if integrity_script.exists():
+        print("\n-- Stage: Source integrity (mirror modules) --")
+        try:
+            run([sys.executable, str(integrity_script), "--verbose"], cwd=py_root, check=True)
+        except subprocess.CalledProcessError:
+            print("Source integrity gate FAILED.", file=sys.stderr)
+            sys.exit(1)
+
     # 1. Alignment (fast gate)
     print("\n-- Stage: Alignment --")
     align_script = py_root / "scripts" / "validate_hqiv_alignment.py"
@@ -435,7 +538,43 @@ def do_run(cwd: Optional[Path] = None) -> None:
 
 # --- Submit ------------------------------------------------------------------
 
-def do_submit(note_file: str, model: str, claimed_score: Optional[float], cwd: Optional[Path] = None) -> None:
+def _git_sha(cwd: Path) -> Optional[str]:
+    try:
+        return run(["git", "rev-parse", "HEAD"], cwd=cwd, capture=True).stdout.strip()
+    except Exception:
+        return None
+
+
+def post_arena_api_submission(
+    cfg: Config,
+    *,
+    note: str,
+    model: str,
+    claimed_score: Optional[float],
+    sigma_weighted: Optional[float],
+    git_ref: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    if not get_arena_api_key(cfg):
+        return None
+    body: Dict[str, Any] = {"note": note, "model": model}
+    if claimed_score is not None:
+        body["claimed_score"] = claimed_score
+    if sigma_weighted is not None:
+        body["sigma_weighted"] = sigma_weighted
+    if git_ref:
+        body["git_ref"] = git_ref
+    return arena_api_request(cfg, "POST", "/submissions", body)
+
+
+def do_submit(
+    note_file: str,
+    model: str,
+    claimed_score: Optional[float],
+    sigma_weighted: Optional[float] = None,
+    pr_only: bool = False,
+    api_only: bool = False,
+    cwd: Optional[Path] = None,
+) -> None:
     cwd = cwd or Path.cwd()
     if not is_hqiv_workspace(cwd):
         print("Warning: not obviously inside an HQIV arena workspace. Continuing anyway.")
@@ -457,9 +596,43 @@ def do_submit(note_file: str, model: str, claimed_score: Optional[float], cwd: O
         sys.exit(1)
 
     cfg = read_config()
-    token = get_effective_token(cfg)
-    if not token and not has_gh():
-        print("No GitHub token configured and no `gh` CLI found. Run `hqiv-arena login` first.", file=sys.stderr)
+    git_ref = _git_sha(cwd)
+
+    if not pr_only:
+        api_result = post_arena_api_submission(
+            cfg,
+            note=note,
+            model=model,
+            claimed_score=claimed_score,
+            sigma_weighted=sigma_weighted,
+            git_ref=git_ref,
+        )
+        if api_result:
+            print("Arena API submission recorded (provisional leaderboard).")
+            print(api_result.get("message", ""))
+            preview = api_result.get("leaderboard_preview") or {}
+            if preview.get("current_best"):
+                print(f"  current_best score: {preview['current_best'].get('score')}")
+        elif api_only:
+            print("No Arena API key. Sign in at https://disregardfiat.tech/#arena", file=sys.stderr)
+            sys.exit(1)
+
+    if api_only:
+        return
+
+    github_token = get_github_token(cfg)
+    if not github_token and not has_gh():
+        print(
+            "No GitHub PAT or `gh` CLI for PR workflow. Recorded Arena API submission only.\n"
+            "For authoritative CI scoring, run: hqiv-arena login ghp_…  (or gh auth login)",
+            file=sys.stderr,
+        )
+        if pr_only:
+            sys.exit(1)
+        return
+
+    if pr_only and not github_token and not has_gh():
+        print("PR workflow requires GitHub PAT or gh auth.", file=sys.stderr)
         sys.exit(1)
 
     # Create a branch if on main
@@ -512,8 +685,8 @@ def do_submit(note_file: str, model: str, claimed_score: Optional[float], cwd: O
             print(f"gh pr create had issues, falling back to API: {e}")
 
     # Fallback: direct GitHub API PR creation (requires token with repo scope)
-    if not token:
-        print("Cannot create PR: no token and gh not available / failed.", file=sys.stderr)
+    if not github_token:
+        print("Cannot create PR: no GitHub token and gh not available / failed.", file=sys.stderr)
         sys.exit(1)
 
     # We need the repo name and head ref
@@ -529,7 +702,7 @@ def do_submit(note_file: str, model: str, claimed_score: Optional[float], cwd: O
         ref = f"{owner}:{head}"
 
         # Create PR via API
-        url = f"{get_effective_api_base(cfg)}/repos/{owner}/{repo}/pulls"
+        url = f"{get_github_api_base(cfg)}/repos/{owner}/{repo}/pulls"
         payload = {
             "title": pr_title,
             "head": head if "/" not in head else ref.split(":", 1)[1],
@@ -541,7 +714,7 @@ def do_submit(note_file: str, model: str, claimed_score: Optional[float], cwd: O
             url,
             data=data,
             headers={
-                "Authorization": f"token {token}",
+                "Authorization": f"token {github_token}",
                 "Accept": "application/vnd.github+json",
                 "Content-Type": "application/json",
             },
@@ -559,6 +732,24 @@ def do_submit(note_file: str, model: str, claimed_score: Optional[float], cwd: O
 
 def do_submissions(all_public: bool = False, cwd: Optional[Path] = None) -> None:
     cwd = cwd or Path.cwd()
+    cfg = read_config()
+    if get_arena_api_key(cfg):
+        try:
+            path = "/submissions?all=1" if all_public else "/submissions"
+            data = arena_api_request(cfg, "GET", path)
+            subs = data.get("submissions") or []
+            if subs:
+                print("=== Arena API submissions ===")
+                for s in subs[:20]:
+                    print(
+                        f"  {s.get('created_at', '')}  {s.get('author', '?')}  "
+                        f"model={s.get('model', '?')}  score={s.get('claimed_score')}"
+                    )
+            else:
+                print("No Arena API submissions yet.")
+        except Exception as e:
+            print(f"Arena API submissions list failed: {e}")
+
     if has_gh():
         label = "hqiv-arena" if not all_public else None
         args = ["gh", "pr", "list", "--limit", "20", "--json", "number,title,author,headRefName,createdAt,url"]
@@ -569,7 +760,7 @@ def do_submissions(all_public: bool = False, cwd: Optional[Path] = None) -> None
         return
 
     print("Install `gh` (GitHub CLI) for nice submission listing, or implement custom listing here.")
-    print("For now, visit https://github.com/HQIV/hqiv-lean/pulls and https://github.com/disregardfiat/pyhqiv/pulls")
+    print(f"For now, visit https://github.com/HQIV/hqiv-lean/pulls and {PYHQIV_GITHUB_WEB}/pulls")
 
 
 def do_note(ref: str, cwd: Optional[Path] = None) -> None:
@@ -639,14 +830,22 @@ def main(argv: Optional[list[str]] = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     # login
-    p = sub.add_parser("login", help="Store GitHub PAT for Arena operations")
-    p.add_argument("token", nargs="?", help="GitHub PAT (ghp_... or github_pat_...)")
-    p.add_argument("--api", help="Override API base (rarely needed)")
+    p = sub.add_parser("login", help="Store Arena API key (hqiv_…) and/or GitHub PAT")
+    p.add_argument("token", nargs="?", help="hqiv_… from disregardfiat.tech/#arena or ghp_… PAT")
+    p.add_argument(
+        "--api",
+        help="Override Arena API URL (https://disregardfiat.tech/api/v1) or GitHub API base",
+    )
     p.set_defaults(func=lambda a: do_login(a.token, a.api))
 
     # config
     p = sub.add_parser("config", help="Show current configuration")
-    p.set_defaults(func=lambda a: print(json.dumps(read_config().to_dict(), indent=2)))
+    p.set_defaults(
+        func=lambda a: print(
+            json.dumps(read_config().to_dict(), indent=2)
+            + "\n# HQIV_ARENA_TOKEN / HQIV_ARENA_API_URL override file values"
+        )
+    )
 
     # benchmark
     p = sub.add_parser("benchmark", help="Show the fixed HQIV benchmark")
@@ -670,7 +869,19 @@ def main(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--note-file", required=True, help="Markdown file with detailed progress note")
     p.add_argument("--model", required=True, help="Model or agent used (e.g. 'Claude 4 Opus')")
     p.add_argument("--claimed-score", type=float, help="Optional local score you observed")
-    p.set_defaults(func=lambda a: do_submit(a.note_file, a.model, a.claimed_score))
+    p.add_argument("--sigma-weighted", type=float, help="Optional weighted sigma from local run")
+    p.add_argument("--api-only", action="store_true", help="Only POST to disregardfiat Arena API")
+    p.add_argument("--pr-only", action="store_true", help="Skip Arena API; only open GitHub PR")
+    p.set_defaults(
+        func=lambda a: do_submit(
+            a.note_file,
+            a.model,
+            a.claimed_score,
+            a.sigma_weighted,
+            a.pr_only,
+            a.api_only,
+        )
+    )
 
     # submissions
     p = sub.add_parser("submissions", help="List recent submissions / PRs")
