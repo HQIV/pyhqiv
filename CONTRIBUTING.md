@@ -8,7 +8,6 @@ Thank you for helping make HQIV a living, crowdsourced physics improvement engin
 - **Lean ↔ Python bidirectional alignment is a hard gate.** Numerical results in pyhqiv must be consistent with formally derived values from hqiv-lean (within the tolerances defined in the alignment script). Functional helpers only — no hard-coded constants in scoring/alignment logic.
 - **New feature → new test.** Adding capability (phase diagram generator, new fluid observable, improved lattice combinatorics, new resonance channel, …) requires corresponding new tests. Those tests become part of the permanent suite upon merge.
 - **"Sigma everywhere".** We reward measurable, broad reductions in error/variance (σ) across multiple physical observables. Large regressions on any protected core metric (Ω_k horizons, lapse, mode counts, proton anchor, so(8) dimension, derived masses, …) are heavily penalized or cause the submission to be ineligible.
-- **Calculator hygiene (enforced by CI + guard tests):** src/pyhqiv/ contains **absolutely zero constants** other than geometry necessities (π, √3 for cube diagonal, 2π for phase, natural-unit 1.0). Updated functions / second-order terms / corrections contributed via arena must be pure (no constants). Scale witnesses, local conditions (proton mass anchor, CMB T0, earth surface g, vacuum ε0/μ0, …) live only in tests/setup_defaults.py + data/*.json + *_with_errors.py (with explicit source + error bars from PDG/CODATA/Planck/...). Tests must quote their error bars from the source material.
 
 ## Branch & PR Workflow (HQIV Arena)
 

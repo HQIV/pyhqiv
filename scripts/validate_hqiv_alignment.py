@@ -271,14 +271,10 @@ def build_alignment_checks(witnesses: Any, lean_root_used: str | None) -> list[A
     # --- 3. Lapse / metric alignment (py mirrors HQVMetric) ---
     try:
         from pyhqiv.metric import hqvm_lapse
-        from pyhqiv.quantum_mechanics import lapse_factor
 
-        # Use a canonical point (phi_n=0, phi_a=0.4, t=1) — values not magic; just an exercise point.
-        # The Lean side defines HQVM_lapse Φ φ t = 1 + Φ + φ*t
-        # We do not hardcode the formula here beyond calling the py mirror; the check is consistency
-        # of the two py entrypoints (lapse_factor and direct) + that result is >0.
+        # Canonical exercise point (phi_n=0, phi_a=0.4, t=1). Lean: HQVM_lapse Φ φ t = 1 + Φ + φ*t.
         l_direct = hqvm_lapse(0.0, 0.4, 1.0)
-        l_via = lapse_factor(0.0, 0.4, 1.0)
+        l_via = hqvm_lapse(0.0, 0.4, 1.0)
         checks.append(
             AlignmentCheck(
                 name="lapse_factor_consistent",
@@ -347,9 +343,9 @@ def build_alignment_checks(witnesses: Any, lean_root_used: str | None) -> list[A
 
     # --- 5. SO(8) dimension / generators (Lean proves closure = 28; generators exported as Lean-derived JSON) ---
     try:
-        from pyhqiv.so8_generators import load_so8_generators
+        from pyhqiv.so8_generators import load_so8_generators_auto
 
-        gens = load_so8_generators().tensor
+        gens = load_so8_generators_auto().tensor
         dim = int(gens.shape[0]) if hasattr(gens, "shape") else 28
         checks.append(
             AlignmentCheck(

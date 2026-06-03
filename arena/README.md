@@ -18,12 +18,6 @@ See the top-level `CONTRIBUTING.md` for the full workflow, gates, and "sigma eve
 
 The live leaderboard is also rendered at https://disregardfiat.tech/#arena (pulls the JSON from this repo's main branch).
 
-## Calculator rules for contributors (src + arena submissions)
-- **0 constants in src/** except geometry (π, √3, 2π, naturals). All new functions (incl. second-order + corrections) must be completely dynamic / pure.
-- Tests + setup_defaults.py carry scale witnesses + local conditions (proton, earth surface, earth vacuum, CMB now, ...) with explicit (value, ±err, "Source") from the authoritative paper/experiment.
-- Every feature lands with tests that have error bars; arena CI only promotes if new work beats sigma in general (no protected regressions).
-- See CONTRIBUTING.md and arena/templates/new_benchmark_test.py.template .
-
 ## CLI
 
 After `pip install -e .[dev]` (or from the source tree with the wrapper), the command `hqiv-arena` is available.

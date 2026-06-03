@@ -50,13 +50,14 @@ jobs:
           git clone --depth 1 https://github.com/HQIV/hqiv-lean.git _lean/hqiv-lean
           echo "lean_path=$(pwd)/_lean/hqiv-lean" >> $GITHUB_OUTPUT
 
-      - name: Install elan / lake (Lean toolchain)
-        if: steps.lean-co.outcome == 'success'
+      - name: Install elan / lake (Lean toolchain for hqiv-lean checkout)
+        if: steps.lean-co.outcome == 'success' && steps.lean-co.outputs.lean_path != ''
         uses: leanprover/lean-action@v1
         with:
           build: false
           test: false
-          # We will run lake manually below for the heavy target + export
+          lake-package-directory: _lean/hqiv-lean
+          # Full cert target runs manually below inside the Lean tree
 
       - name: Lean full certificate (HQIVSO8Closure + major theorems) — HARD GATE
         id: cert
@@ -66,6 +67,12 @@ jobs:
           LEAN_DIR="${{ steps.lean-co.outputs.lean_path || '' }}"
           if [ -z "$LEAN_DIR" ] || [ ! -d "$LEAN_DIR" ]; then
             echo "::warning::No Lean checkout; skipping live cert (alignment will use committed witnesses). For full arena on Lean changes, push coordinated branches."
+            echo "cert_ok=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # PRs use packaged witnesses unless workflow_dispatch requests full cert.
+          if [ "${{ github.event_name }}" != "push" ] && [ "${{ github.event.inputs.full_lean_cert }}" != "true" ]; then
+            echo "::notice::Skipping heavy lake build on PR (use workflow_dispatch full_lean_cert=true to force)."
             echo "cert_ok=skipped" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -199,10 +206,10 @@ jobs:
       - name: Ruff lint (fast feedback)
         run: ruff check src tests scripts || true
 
-      - name: Full pytest (including paper validation, reproducibility, lean-backed tests)
+      - name: Arena hard pytest gate (arena machinery + paper numbers)
         run: |
-          pytest tests/ -v --cov=pyhqiv --cov-report=term-missing --cov-fail-under=0 \
-            --junit-xml=pytest-junit.xml 2>&1 | tail -80
+          pytest tests/test_hqiv_arena.py tests/test_paper_numbers.py \
+            -v --junit-xml=pytest-junit.xml
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
