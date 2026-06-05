@@ -8,7 +8,6 @@ scales (Θ), and nuclear binding energies.
 
 import numpy as np
 import pytest
-
 from pyhqiv.constants import (
     AGE_APPARENT_GYR_PAPER,
     ALPHA_EM_INV,
@@ -28,9 +27,9 @@ from pyhqiv.lattice import (
     omega_k_at_horizon,
     x_over_theta_from_horizons,
 )
-from pyhqiv.nuclear import NuclearConfig, binding_energy_mev
 from pyhqiv.utils import theta_for_atom, theta_local
 
+from pyhqiv.nuclear import binding_energy_mev
 
 # ---- CODATA / standard values (exact or high-precision) ----
 # Speed of light: CODATA 2018 c = 2.99792458e8 m/s
@@ -318,7 +317,7 @@ def test_deuteron_as_uuuddd_subatomic_solver():
 
     # D = 2H: experiment M_D = M_p + M_n - B_D
     B_D_MEV = B_2H_MEV_EXP
-    M_D_MEV_EXP = M_PROTON_MEV + M_NEUTRON_MEV - B_D_MEV
+    M_PROTON_MEV + M_NEUTRON_MEV - B_D_MEV
 
     # Subatomic solver: D as single 6-quark confined state uuuddd (3u + 3d)
     E_uuuddd = confined_energy_mev("uuuddd")

@@ -1,7 +1,6 @@
 """Tests for semiconductors: compute_band_gap, dos, effective_mass, dielectric."""
 
 import numpy as np
-
 from pyhqiv.semiconductors import (
     compute_band_gap,
     compute_conductivity_tensor,

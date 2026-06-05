@@ -10,10 +10,10 @@ Python code must not hardcode physics literals; it should load them here.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-import json
-from functools import lru_cache
 import importlib.resources as resources
+import json
+from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -100,7 +100,7 @@ def load_lean_witnesses(path: str | None = None) -> LeanWitnesses:
     """
     witness_path = _default_witnesses_path() if path is None else path
     try:
-        with open(witness_path, "r", encoding="utf-8") as f:
+        with open(witness_path, encoding="utf-8") as f:
             data = json.load(f)
     except FileNotFoundError as e:
         raise LeanWitnessError(
@@ -114,7 +114,7 @@ def load_lean_witnesses(path: str | None = None) -> LeanWitnesses:
     if path is None:
         overlay_path = _optional_resonance_overlay_path()
         if overlay_path.exists():
-            with open(overlay_path, "r", encoding="utf-8") as f:
+            with open(overlay_path, encoding="utf-8") as f:
                 overlay = json.load(f)
             if not isinstance(overlay, Mapping):
                 raise LeanWitnessError(

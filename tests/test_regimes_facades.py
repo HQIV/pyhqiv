@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import numpy as np
-
-from pyhqiv import HQIVState, So8Carrier
-from pyhqiv import lightcone as lc
-from pyhqiv import metric
 import pytest
 
+from pyhqiv import HQIVState, So8Carrier, metric
+from pyhqiv import lightcone as lc
 from pyhqiv.regimes import (
     blackhole_compton_quarter_period_s,
     blackhole_horizon_quarter_angle_rad,

@@ -84,7 +84,7 @@ class TestFluid(unittest.TestCase):
         self.assertTrue(h.holds())
 
     def test_plasma_fluid_closure_hypothesis_fails_bad_coherence(self) -> None:
-        g = gamma_hqiv()
+        gamma_hqiv()
         h = PlasmaFluidClosureHypothesis(
             nu_mol=0.0,
             nu_eddy=1.0,

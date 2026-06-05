@@ -41,15 +41,17 @@ from dataclasses import dataclass
 from typing import List, Mapping, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
-
 from scipy.optimize import minimize
 
 from pyhqiv.fluid import f_inertia
+
 # Scale / local conditions + Lean witnesses (no literals in this .py; all numbers in *.json)
 from pyhqiv.scale_witness import (
-    local_cmb_temperature_K,
-    derived_proton_mass_MeV,
     derived_neutron_mass_MeV,
+    derived_proton_mass_MeV,
+    local_cmb_temperature_K,
+)
+from pyhqiv.scale_witness import (
     load_local_conditions as _load_local,
 )
 
@@ -170,12 +172,12 @@ def _bound_theta_from_matrix_composition(
     """
     if P <= 0 and N <= 0:
         return lattice_base_m * 8.0
+    from pyhqiv.energy_field import merge_constituents
     from pyhqiv.subatomic import (
-        make_proton_from_quark_states,
         make_neutron_from_quark_states,
+        make_proton_from_quark_states,
         quark_state_matrices_for_nucleon,
     )
-    from pyhqiv.energy_field import merge_constituents
 
     if algebra is None:
         from pyhqiv.algebra import OctonionHQIVAlgebra
@@ -205,8 +207,8 @@ def _free_nucleon_thetas_m(lattice_base_m: float, algebra=None) -> Tuple[float, 
 
 def _nucleon_state_matrix_unprojected(is_proton: bool, algebra) -> np.ndarray:
     """Unprojected 8×8 nucleon state (product of 3 quarks, no singlet projection) for network invariant."""
-    from pyhqiv.subatomic import quark_state_matrices_for_nucleon
     from pyhqiv.energy_field import merge_constituents
+    from pyhqiv.subatomic import quark_state_matrices_for_nucleon
     quarks = quark_state_matrices_for_nucleon(is_proton, algebra=algebra)
     composite = merge_constituents(quarks, project_singlet=False, algebra=algebra)
     return composite.state_matrix
@@ -580,13 +582,13 @@ def nuclear_composite_energy_mev(P: int, N: int, t_cmb: float = _CMB_K) -> float
     """
     if P <= 0 and N <= 0:
         return 0.0
+    from pyhqiv.algebra import OctonionHQIVAlgebra
+    from pyhqiv.energy_field import confined_energy_nuclear_composite, merge_constituents
     from pyhqiv.subatomic import (
-        make_proton_from_quark_states,
         make_neutron_from_quark_states,
+        make_proton_from_quark_states,
         quark_state_matrices_for_nucleon,
     )
-    from pyhqiv.energy_field import merge_constituents, confined_energy_nuclear_composite
-    from pyhqiv.algebra import OctonionHQIVAlgebra
 
     algebra = OctonionHQIVAlgebra(verbose=False)
     constituents = []
@@ -933,7 +935,7 @@ class NuclearConfig:
         return max(0.0, float(de))
 
     # ── Allowed relational snaps ──
-    def allowed_snaps(self) -> List[Tuple["NuclearConfig", float, str]]:
+    def allowed_snaps(self) -> List[Tuple[NuclearConfig, float, str]]:
         snaps = []
         theta_stable = self.theta_stable_m()
         # β⁻: A==1 (free neutron) or quark-driven light nuclei (A≤3) or one neutron with lower Θ
@@ -1032,7 +1034,7 @@ class NuclearConfig:
         lam = self.decay_rate_per_s()
         return np.log(2.0) / lam if lam > 0 and np.isfinite(lam) else None
 
-    def decay_channel_reports(self) -> List["DecayChannelReport"]:
+    def decay_channel_reports(self) -> List[DecayChannelReport]:
         """
         Per-channel decay rates consistent with :meth:`decay_rate_per_s`.
 
@@ -1074,7 +1076,7 @@ class NuclearConfig:
 
 
 def _daughter_pn_from_snap(
-    daughter: Union["NuclearConfig", Tuple[int, int]],
+    daughter: Union[NuclearConfig, Tuple[int, int]],
 ) -> Tuple[Optional[int], Optional[int]]:
     if isinstance(daughter, NuclearConfig):
         return (daughter.P, daughter.N)
@@ -1521,7 +1523,7 @@ def binding_energy_mev_functional(
     gives MeV-scale B (docs/binding_energy_walkthrough.md §6.5.3).
     """
     from pyhqiv.energy_field import effective_horizon_from_energy_mev
-    from pyhqiv.subatomic import proton_energy_mev, neutron_energy_mev
+    from pyhqiv.subatomic import neutron_energy_mev, proton_energy_mev
 
     if P <= 0 and N <= 0:
         return BindingResult(
@@ -1542,7 +1544,7 @@ def binding_energy_mev_functional(
     theta_p = effective_horizon_from_energy_mev(E_p)
     theta_n = effective_horizon_from_energy_mev(E_n)
     masses_mev = np.array([M_PROTON_MEV] * P + [M_NEUTRON_MEV] * N)
-    is_proton_list = [True] * P + [False] * N
+    [True] * P + [False] * N
     E_free = float(np.sum(masses_mev))
     A = P + N
 
@@ -1752,10 +1754,9 @@ class Nuclide:
             return _ureg.Quantity(self._cfg.E_info_mev, "MeV")
         return self._cfg.E_info_mev
 
-    def decay_chain(self, max_steps: int = 20) -> List["Nuclide"]:
+    def decay_chain(self, max_steps: int = 20) -> List[Nuclide]:
         """Chain of Nuclide instances (same t_cmb, neutrino_flux)."""
         raw = decay_chain(self.P, self.N, max_steps, t_cmb=self.t_cmb)
-        sym = self._get_symbol
         return [
             Nuclide((p, n), t_cmb=self.t_cmb, neutrino_flux=self.neutrino_flux)
             for p, n in raw

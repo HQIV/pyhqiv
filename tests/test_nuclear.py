@@ -98,9 +98,10 @@ def test_data_witness_derived_nucleon_keys_when_present() -> None:
 def _nuclear_stack_available() -> bool:
     try:
         import pyhqiv.constants  # noqa: F401
-        import pyhqiv.fluid  # noqa: F401
-        import pyhqiv.hqiv_scalings  # noqa: F401
         import pyhqiv.horizon_network  # noqa: F401
+        import pyhqiv.hqiv_scalings  # noqa: F401
+
+        import pyhqiv.fluid  # noqa: F401
         import pyhqiv.nuclear  # noqa: F401
     except ImportError:
         return False
@@ -262,6 +263,7 @@ def test_decay_chain_nuclide_hqiv() -> None:
 def test_phase_lift_gives_nonzero_trace() -> None:
     from pyhqiv.algebra import OctonionHQIVAlgebra
     from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
+
     from pyhqiv.nuclear import build_nucleon_matrix_with_phase
 
     L = get_hqiv_nuclear_constants(2.725)["LATTICE_BASE_M"]

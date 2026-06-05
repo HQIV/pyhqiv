@@ -1,26 +1,25 @@
+import cmath
 import math
 
-import cmath
-
-from pyhqiv.lightcone import alpha, cube_directions, octonion_imaginary_dim
 from pyhqiv.auxiliary_field import phi_of_shell
+from pyhqiv.lightcone import alpha, cube_directions, octonion_imaginary_dim
 from pyhqiv.metric import hqvm_lapse
 from pyhqiv.omaxwell_couplings import (
     alpha_eff_at_shell,
     alpha_gut,
-    one_over_alpha_eff,
     coulomb_strength_shell,
+    one_over_alpha_eff,
 )
 from pyhqiv.quantum_mechanics import (
-    Operator,
     Wavefunction,
     birefringence_redshift,
-    lapse_corrected_hamiltonian,
     redshifted_energy_birefringence_balance,
     satisfies_lapse_corrected_schrodinger_residual,
     satisfies_time_dependent_schrodinger_residual,
 )
 from pyhqiv.surface_wave_self_clock import cosmic_birefringence_rad_at_now
+
+
 def test_omaxwell_alpha_gut_derived() -> None:
     assert alpha_gut() == 1.0 / float(cube_directions() * octonion_imaginary_dim())
     assert alpha_gut() == 1.0 / 42.0

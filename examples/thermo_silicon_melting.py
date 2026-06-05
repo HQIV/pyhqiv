@@ -4,14 +4,15 @@ Silicon melting curve with HQIV corrections.
 Standard T_m(1 bar) ≈ 1687 K; at 10 GPa HQIV predicts +18 K shift from lapse.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from pyhqiv.constants import ALPHA, GAMMA
+
 from pyhqiv.thermo import (
+    lapse_compression_thermo,
     phi_from_rho_T,
     shell_fraction_energy_shift,
-    lapse_compression_thermo,
 )
-from pyhqiv.constants import ALPHA, GAMMA
 
 P_GPa = np.linspace(0, 20, 51)
 # Standard extrapolation T_m ≈ 1687 + 12*P (rough)

@@ -8,14 +8,14 @@ This module provides:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
-from typing import Callable, Dict, List, Sequence, Tuple
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Sequence
 
 import numpy as np
 
-from pyhqiv.quantum_simulator import Circuit, NoiseModel, QuantumState, run_circuit
 from pyhqiv.now_setters import active_slice
+from pyhqiv.quantum_simulator import Circuit, NoiseModel, QuantumState, run_circuit
 
 
 def hidden_tag_of(x: int, period: int) -> int:

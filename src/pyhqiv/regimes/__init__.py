@@ -9,7 +9,7 @@ from pyhqiv.regimes.blackhole import (
     blackhole_horizon_quarter_angle_rad,
     blackhole_reference_shell_m,
 )
-from pyhqiv.regimes.galactic import galactic_gamma_hqiv, galactic_g_eff, galactic_metric_summary
+from pyhqiv.regimes.galactic import galactic_g_eff, galactic_gamma_hqiv, galactic_metric_summary
 from pyhqiv.regimes.quantum import (
     born_probs_from_real_state,
     evolve_so8_carrier_expm,

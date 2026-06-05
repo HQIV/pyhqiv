@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import math
 
-import pytest
-
 from pyhqiv import auxiliary_field as aux
 from pyhqiv.hqiv_bound_states import (
     SO8_DIM,
@@ -18,7 +16,6 @@ from pyhqiv.hqiv_bound_states import (
     network_weight_for_nuclide,
 )
 from pyhqiv.hqiv_nuclear_spectra import (
-    R_m,
     V_nuclear,
     barbell_ring_new_modes_identity,
     beta_decay_rate_scalar,

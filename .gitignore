@@ -27,3 +27,6 @@ htmlcov/
 web/wheels/
 _site/
 site/
+
+# Backup / scratch directories (do not lint or commit)
+bak/

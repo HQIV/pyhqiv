@@ -24,22 +24,16 @@ Arena: new phase/allotrope/heat/conduct features get new tests with error bars; 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
 from pyhqiv.fluid import f_inertia
-from pyhqiv.thermodynamic_fundamentals import (
-    equilibrium_rho_total_for_phi,
-    temperature_at_shell,
-)
 from pyhqiv.scale_witness import (
-    derived_proton_mass_MeV,
     derived_neutron_mass_MeV,
+    derived_proton_mass_MeV,
     load_local_conditions,
-    local_cmb_temperature_K,
 )
-from pyhqiv.lightcone import reference_m
 
 
 def _load_const(name: str, default: float) -> float:
@@ -156,7 +150,7 @@ class HQIVHydrogen:
         rho = 800.0  # kg/m3 order for metallic
         phi = phi_from_rho_T(rho, self.molar_mass, T_K)
         # pressure proxy from energy density
-        P = (phi**2) / (8 * np.pi) * 1e-9  # toy to GPa
+        (phi**2) / (8 * np.pi) * 1e-9  # toy to GPa
         return 400.0 * (1 + 0.1 * (T_K / 300))  # around 400, T dep
 
 
@@ -256,7 +250,7 @@ def hqiv_answer_thermo(question: str) -> Dict[str, Any]:
 
 
 # More helpers for tests
-def lapse_compression_thermo(a: float, phi: float, gamma: float) -> float:
+def lapse_compression_thermo(a: float, phi: float, gamma: float) -> float:  # noqa: F811  (redef of earlier stub; both for API surface)
     return f_inertia(a, phi)
 
 

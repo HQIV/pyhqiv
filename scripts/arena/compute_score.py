@@ -27,11 +27,21 @@ if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
 
 try:
-    from pyhqiv.arena import build_default_metrics, compute_score, serialize_score, award_badges  # type: ignore
+    from pyhqiv.arena import (  # type: ignore
+        award_badges,
+        build_default_metrics,
+        compute_score,
+        serialize_score,
+    )
 except Exception:
     # Fallback for direct script runs without install
     sys.path.insert(0, str(REPO_ROOT / "src"))
-    from pyhqiv.arena import build_default_metrics, compute_score, serialize_score, award_badges  # type: ignore
+    from pyhqiv.arena import (  # type: ignore
+        award_badges,
+        build_default_metrics,
+        compute_score,
+        serialize_score,
+    )
 
 
 def _get_env(k: str, default: str | None = None) -> str | None:
@@ -72,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         pyhqiv_version=pyv,
     )
 
-    data = serialize_score(res, args.out)
+    serialize_score(res, args.out)
 
     # Preview
     print("=== HQIV Arena Score ===")

@@ -12,7 +12,6 @@ from pyhqiv.spherical_harmonics import (
     real_basis_dimension,
     spherical_harmonic_Y,
     spherical_harmonic_Y_real,
-    spherical_harmonic_real_basis_matrix,
     spherical_laplace_on_Y_mode,
 )
 

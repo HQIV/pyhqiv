@@ -5,9 +5,9 @@ Standard: T_c = 150.87 K, P_c = 4.898 MPa.
 HQIV lapse at ρ_c shifts critical point (falsifiable prediction).
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
-from pyhqiv.thermo import phi_from_rho_T, lapse_compression_thermo
+
+from pyhqiv.thermo import lapse_compression_thermo, phi_from_rho_T
 
 T_c_std = 150.87  # K
 P_c_std = 4.898e6  # Pa

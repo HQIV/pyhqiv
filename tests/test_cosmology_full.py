@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
+from pyhqiv.cosmology import HQIVUniverseEvolver
 
 from pyhqiv import cosmology_full
-from pyhqiv.cosmology import HQIVUniverseEvolver
 
 
 def test_sigma8_returns_float():

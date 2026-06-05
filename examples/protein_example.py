@@ -5,8 +5,11 @@ Requires: pip install pyhqiv[ase] or pyhqiv[mda]
 
 import sys
 import time
+
 import numpy as np
+
 from pyhqiv import HQIVSystem
+
 
 def main():
     pdb_path = sys.argv[1] if len(sys.argv) > 1 else None

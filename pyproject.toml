@@ -71,7 +71,10 @@ addopts = "-v --tb=short"
 [tool.ruff]
 line-length = 100
 target-version = "py39"
-exclude = ["src/pyhqiv/_version.py"]  # setuptools_scm-generated; do not lint
+exclude = [
+    "src/pyhqiv/_version.py",  # setuptools_scm-generated; do not lint
+    "bak/",                    # backup copy of source; do not lint
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
@@ -85,7 +88,13 @@ ignore = [
     "UP007",  # use X | Y for Union
     "UP045",  # use X | None for Optional
     "N813",   # camelcase import as lowercase (e.g. MDAnalysis as mda)
+    # Additional for existing patterns + tests:
+    "E402",   # module-level import not at top of file (registration blocks, lazy, test setup)
+    "E701",   # multiple statements on one line (colon) - compact one-liners in physics code
+    "E741",   # ambiguous 'l' (angular momentum / index in many nuclear/lattice loops)
+    "N811", "N815", "N816",  # mixedCase/const-in-class for physics symbols (extend N8xx ignores)
 ]
+per-file-ignores = { "__init__.py" = ["F401", "F811"], "tests/*" = ["F401", "F841"] }
 
 [tool.mypy]
 python_version = "3.9"

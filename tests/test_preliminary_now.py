@@ -1,14 +1,13 @@
 import math
 
+from pyhqiv.action import (
+    friedmann_from_action_equivalence_holds,
+    s_hqvm_grav,
+    s_hqvm_grav_zero_holds,
+)
 from pyhqiv.auxiliary_field import phi_of_shell, shell_temperature
-from pyhqiv.lightcone import (
-    alpha,
-    available_modes,
-    curvature_norm_combinatorial,
-    lattice_simplex_count,
-    new_modes,
-    reference_m,
-    shell_shape,
+from pyhqiv.conservations import (
+    phase_conservation_numeric,
 )
 from pyhqiv.forces import (
     ForceSector,
@@ -20,6 +19,19 @@ from pyhqiv.forces import (
     in_si,
     o_component_to_sector,
     time_axis,
+)
+from pyhqiv.gr_from_maxwell import (
+    hqvm_friedmann_power_residual,
+    o_maxwell_determines_hqvm_gr_homogeneous_equivalence,
+)
+from pyhqiv.lightcone import (
+    alpha,
+    available_modes,
+    curvature_norm_combinatorial,
+    lattice_simplex_count,
+    new_modes,
+    reference_m,
+    shell_shape,
 )
 from pyhqiv.metric import (
     build_metric_snapshot,
@@ -34,26 +46,6 @@ from pyhqiv.metric import (
     three_minus_gamma,
     time_angle,
     two_pi,
-)
-from pyhqiv.conservations import (
-    lapse_forces_time_angle_term,
-    phase_conservation_numeric,
-)
-from pyhqiv.action import (
-    friedmann_from_action_equivalence_holds,
-    s_hqvm_grav,
-    s_hqvm_grav_zero_holds,
-)
-from pyhqiv.gr_from_maxwell import (
-    hqvm_friedmann_power_residual,
-    o_maxwell_determines_hqvm_gr_homogeneous_equivalence,
-)
-from pyhqiv.spin_statistics import (
-    SpinClass,
-    exchange_phase_identical,
-    resonance_lifetime,
-    resonance_half_life,
-    two_pi_phase,
 )
 from pyhqiv.modified_maxwell import (
     charge_conservation_o,
@@ -72,6 +64,13 @@ from pyhqiv.now import (
     now_condition,
     shell_index_for_temperature,
     temperature_from_shell_index,
+)
+from pyhqiv.spin_statistics import (
+    SpinClass,
+    exchange_phase_identical,
+    resonance_half_life,
+    resonance_lifetime,
+    two_pi_phase,
 )
 
 

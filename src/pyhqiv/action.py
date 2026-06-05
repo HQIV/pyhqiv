@@ -22,7 +22,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from pyhqiv.metric import gamma_hqiv, g_eff, hqvm_friedmann_holds, hqvm_friedmann_residual
+from pyhqiv.metric import g_eff, gamma_hqiv, hqvm_friedmann_holds, hqvm_friedmann_residual
 
 
 def s_hqvm_grav(phi_auxiliary: float, rho_m: float, rho_r: float) -> float:

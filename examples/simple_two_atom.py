@@ -3,7 +3,9 @@ Simple two-atom HQIV example: build system, compute phase-corrected E/B on a gri
 """
 
 import numpy as np
-from pyhqiv import HQIVSystem, DiscreteNullLattice
+
+from pyhqiv import DiscreteNullLattice, HQIVSystem
+
 
 def main():
     # Paper values

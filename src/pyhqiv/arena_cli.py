@@ -35,14 +35,13 @@ import os
 import shutil
 import subprocess
 import sys
-import tempfile
-import textwrap
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
+
 
 # Auto-insert src/ when running from an unpacked source tree (before any relative imports)
 def _auto_insert_src() -> None:
@@ -95,7 +94,7 @@ class Config:
         return {"token": self.token, "apiBaseUrl": self.api_base_url}
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "Config":
+    def from_dict(cls, d: Dict[str, Any]) -> Config:
         return cls(
             token=d.get("token"),
             api_base_url=d.get("apiBaseUrl", DEFAULT_API_BASE),
@@ -346,10 +345,10 @@ def do_clone(target: Optional[str]) -> None:
 
     print()
     print("Clone complete.")
-    print(f"Next steps:")
+    print("Next steps:")
     print(f"  cd {py_dir}")
-    print(f"  hqiv-arena setup")
-    print(f"  hqiv-arena run")
+    print("  hqiv-arena setup")
+    print("  hqiv-arena run")
     print()
     print("All further hqiv-arena commands should be run from inside the pyhqiv directory (or the workspace root).")
 
@@ -420,7 +419,7 @@ def do_run(cwd: Optional[Path] = None) -> None:
         # Fallback to in-process (always available after editable install or PYTHONPATH)
         try:
             sys.path.insert(0, str(py_root / "src"))
-            from pyhqiv.arena import build_default_metrics, compute_score  # type: ignore
+            from pyhqiv.arena import compute_score  # type: ignore
 
             res = compute_score()
             print(f"overall_score: {res.overall_score}")

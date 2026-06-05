@@ -18,6 +18,11 @@ from __future__ import annotations
 __version__ = "0.1.0-arena"
 
 # Re-exports for convenience in CI / notebooks
+from .badges import (  # noqa: F401
+    BADGE_DEFS,
+    Badge,
+    award_badges,
+)
 from .metrics import (  # noqa: F401
     METRIC_REGISTRY,
     Metric,
@@ -29,11 +34,6 @@ from .scoring import (  # noqa: F401
     compute_score,
     delta_vs_baseline,
     serialize_score,
-)
-from .badges import (  # noqa: F401
-    Badge,
-    award_badges,
-    BADGE_DEFS,
 )
 
 __all__ = [

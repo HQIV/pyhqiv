@@ -42,7 +42,7 @@ def main(argv=None):
 
     res = json.load(open(args.results))
     lb = load_json(Path(args.leaderboard), {"entries": [], "current_best": None, "history": [], "badges": {}})
-    base = load_json(Path(args.baseline), {})
+    load_json(Path(args.baseline), {})
 
     entry = {
         "branch": os.environ.get("GITHUB_REF_NAME", "local"),

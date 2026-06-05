@@ -5,7 +5,6 @@ Uses thermo_ase_phase_stability(G = E + P V - T S with HQIV correction).
 Requires: pip install pyhqiv[ase]
 """
 
-import numpy as np
 from pyhqiv.thermo import thermo_ase_phase_stability
 
 # Example: after ASE relaxation, you have E, V, n_atoms

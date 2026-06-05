@@ -33,8 +33,8 @@ from __future__ import annotations
 
 import math
 
-from pyhqiv.lepton_resonance_ladder import eff_corrected, effective_surface_at_shell
 from pyhqiv.lean_witnesses import load_lean_witnesses
+from pyhqiv.lepton_resonance_ladder import eff_corrected, effective_surface_at_shell
 from pyhqiv.lightcone import reference_m
 
 COSMIC_BIREFRINGENCE_DEG_NOW_WITNESS_KEY = "cosmic_birefringence_deg_now"

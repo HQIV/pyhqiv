@@ -15,17 +15,14 @@ but is data-driven and integrated with pyhqiv.lean_witnesses.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import importlib.resources as resources
+import json
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
-import json
-import math
 
-import importlib.resources as resources
-from functools import lru_cache
-
-from pyhqiv.lean_witnesses import load_lean_witnesses, LeanWitnesses
+from pyhqiv.lean_witnesses import LeanWitnesses, load_lean_witnesses
 
 
 class ScaleWitness(str, Enum):
@@ -52,7 +49,7 @@ def _default_local_conditions_path() -> Path:
 @lru_cache(maxsize=1)
 def load_local_conditions(path: Path | None = None) -> dict[str, Any]:
     p = path or _default_local_conditions_path()
-    with open(p, "r", encoding="utf-8") as f:
+    with open(p, encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError("local_conditions.json must be an object")

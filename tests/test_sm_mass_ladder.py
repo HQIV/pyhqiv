@@ -1,13 +1,12 @@
 import math
 
-from pyhqiv.sm_embedding import sm_hypercharge_weight, sm_sector_multiplicity
 from pyhqiv.lean_witnesses import load_lean_witnesses
+from pyhqiv.sm_embedding import sm_hypercharge_weight, sm_sector_multiplicity
 from pyhqiv.sm_gr_unification import m_electron_natural
 from pyhqiv.sm_mass_ladder import (
     sm_mass_from_geometry,
     sm_mass_from_geometry_eV,
 )
-from pyhqiv.lean_witnesses import load_lean_witnesses
 
 
 def test_muon_tau_from_resonance_witness_match_lean_export() -> None:

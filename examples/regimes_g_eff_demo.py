@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from pyhqiv import auxiliary_field as af
 from pyhqiv import metric
-from pyhqiv.state import HQIVState
 from pyhqiv.regimes.galactic import galactic_g_eff, galactic_metric_summary
+from pyhqiv.state import HQIVState
 
 
 def main() -> None:

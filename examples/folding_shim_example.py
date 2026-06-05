@@ -19,8 +19,9 @@ if __name__ == "__main__" and str(Path(__file__).resolve().parent.parent) not in
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
-from pyhqiv import HQIVSystem
 from pyhqiv.atom import HQIVAtom
+
+from pyhqiv import HQIVSystem
 
 
 def hqiv_energy_at_positions(system: HQIVSystem, positions: np.ndarray) -> float:
@@ -79,8 +80,8 @@ def run_synthetic_chain(use_ase: bool = False) -> None:
     if use_ase:
         try:
             import ase
-            from ase.optimize import BFGS
             from ase.calculators.calculator import Calculator, all_changes
+            from ase.optimize import BFGS
 
             class HQIVCalculator(Calculator):
                 implemented_properties = ["energy", "forces"]

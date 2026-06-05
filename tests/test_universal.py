@@ -1,12 +1,12 @@
 """Tests for HQIVUniversalSystem and binding calibration (PDG/NIST targets)."""
 
 import numpy as np
-
 from pyhqiv.constants import M_NEUTRON_MEV, M_PROTON_MEV
-from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
 from pyhqiv.horizon_network import mean_field_mu
-from pyhqiv.nuclear import NuclearConfig
+from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
 from pyhqiv.universal_system import HQIVUniversalSystem
+
+from pyhqiv.nuclear import NuclearConfig
 
 
 def test_universal_system_deuteron_like():

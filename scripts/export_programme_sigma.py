@@ -283,9 +283,9 @@ PROBLEMS: list[dict] = [
 def _load_arena(path: Path | None) -> dict:
     if path and path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
-    from pyhqiv.arena import build_default_metrics, compute_score, serialize_score  # type: ignore
-
     import tempfile
+
+    from pyhqiv.arena import build_default_metrics, compute_score, serialize_score  # type: ignore
 
     tmp = Path(tempfile.mkdtemp()) / "arena_results.json"
     res = compute_score(metrics=build_default_metrics())

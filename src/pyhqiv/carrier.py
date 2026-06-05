@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from pyhqiv.so8_generators import So8Generators, lie_bracket, load_so8_generators_auto
+from pyhqiv.so8_generators import So8Generators, load_so8_generators_auto
 
 
 @dataclass

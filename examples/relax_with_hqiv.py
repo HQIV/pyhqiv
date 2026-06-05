@@ -42,6 +42,7 @@ def main() -> None:
     try:
         from ase import Atoms
         from ase.optimize import BFGS
+
         from pyhqiv import HQIVCalculator
     except ImportError as e:
         print("Install ASE and pyhqiv with: pip install pyhqiv[ase]")

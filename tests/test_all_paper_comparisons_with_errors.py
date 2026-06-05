@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Callable, List, Tuple
 
 try:
     import pytest
@@ -27,9 +27,8 @@ except Exception:
     pytest = None  # type: ignore
 
 from pyhqiv.lean_witnesses import load_lean_witnesses
-from pyhqiv.scale_witness import derived_proton_mass_MeV, derived_neutron_mass_MeV
-from pyhqiv.lightcone import reference_m, omega_k_at_horizon, curvature_norm_combinatorial
-from pyhqiv.metric import gamma_hqiv
+from pyhqiv.lightcone import curvature_norm_combinatorial, omega_k_at_horizon, reference_m
+from pyhqiv.scale_witness import derived_neutron_mass_MeV, derived_proton_mass_MeV
 
 # --- Data loading (self-contained in hqvmpy tests/data after copy) ---
 
@@ -165,8 +164,8 @@ except Exception as e:
     print("eta bbn skipped:", e)
 
 try:
-    from pyhqiv.scale_witness import derived_proton_mass_MeV
     from pyhqiv.lean_witnesses import load_lean_witnesses
+    from pyhqiv.scale_witness import derived_proton_mass_MeV
     w = load_lean_witnesses().data
     me_mev = float(w.get("m_electron_MeV", 0.5109989461))
     def _mp_over_me():
@@ -186,7 +185,11 @@ except Exception as e:
 try:
     from pyhqiv.isotope_ladder import IsotopeLadderConfig, IsotopeState, nuclear_binding_energy_mev
     from pyhqiv.lean_witnesses import load_lean_witnesses
-    from tests.data.nuclear_binding_reference import lookup_binding, CODATA_2018_PROTON_MEV, CODATA_2018_NEUTRON_MEV
+    from tests.data.nuclear_binding_reference import (
+        CODATA_2018_NEUTRON_MEV,
+        CODATA_2018_PROTON_MEV,
+        lookup_binding,
+    )
     w = load_lean_witnesses().data
     mp = float(w.get("derivedProtonMass_MeV", CODATA_2018_PROTON_MEV))
     mn = float(w.get("derivedNeutronMass_MeV", CODATA_2018_NEUTRON_MEV))
@@ -225,7 +228,6 @@ except Exception as e:
 
 # --- Present-day curvature at now slice (dynamic with age) vs observations ---
 try:
-    from pyhqiv.now_setters import m_now
     def _omega_k_now():
         # The now-slice value (small, age-dependent); here the paper value for current m_now
         return 0.0098
@@ -243,8 +245,6 @@ except Exception as e:
 
 # --- Vacuum energy (CC problem) and flatness: mainstream worst cases vs HQIV derivations ---
 try:
-    from pyhqiv.quantum_optics.horizon_qed import vacuum_zero_point_natural
-    from pyhqiv.now_setters import m_now
     def _vac_discrep():
         # HQIV from paper-matched finite modes: discrepancy ~0 vs obs (natural match)
         return 0.0
@@ -278,7 +278,6 @@ except Exception as e:
 
 # --- CMB birefringence (from finite_mode_kirchhoff paper script) ---
 try:
-    from pyhqiv.surface_wave_self_clock import cosmic_birefringence_deg_at_now
     # Paper HQIV prediction ~0.379 deg (with wall-clock 51.2 Gyr etc.); obs PR4 0.342 ±0.094
     # Current Python uses witness 0.3 (Lean); for alignment we use the paper's framework value as "HQIV pred"
     # to match attached script exactly. Real Python will converge as more now dynamics ported.
@@ -319,7 +318,7 @@ except Exception as e:
 # --- Flyby orbital anomalies (now with live pyhqiv.orbital code + literature sigma) ---
 
 try:
-    from pyhqiv.orbital import hqiv_flyby_inertia_screen, hqiv_inertia_factor
+    from pyhqiv.orbital import hqiv_flyby_inertia_screen
     fly = load_json("orbital_flyby_paper_numbers.json")
     for case, dat in list(fly.items())[:3]:
         if isinstance(dat, dict) and "hqiv_delta_v_mm_s" in dat:
@@ -350,7 +349,7 @@ try:
                 _flyby_live_getter,
                 target,
                 max(lit_sigma, 0.1),
-                f"literature flyby data; sigma from paper; live hqiv_flyby_inertia_screen from pyhqiv.orbital",
+                "literature flyby data; sigma from paper; live hqiv_flyby_inertia_screen from pyhqiv.orbital",
                 "orbital_flyby",
                 f"hqiv explains anomaly better; residual ~ {dat.get('residual_n_sigma')}; screen={screen:.4f}",
             )
@@ -386,8 +385,8 @@ except Exception:
 
 # --- Basic cosmology / local from setup (Tcmb with Planck err) ---
 
-from tests.setup_defaults import get_local_cmb
 from pyhqiv.scale_witness import local_cmb_temperature_K
+from tests.setup_defaults import get_local_cmb
 
 t, unc, src = get_local_cmb()
 _add(
@@ -404,7 +403,7 @@ _add(
 # inputs flow from A/Z via scale + geometry; error bars from paper sources
 
 try:
-    from pyhqiv.thermo import molar_mass_from_Z, allotrope_theta_modifier
+    from pyhqiv.thermo import allotrope_theta_modifier, molar_mass_from_Z
     # Ice Ih melt ~272 K from curv (nucleon_binding update + hqiv_lab); source paper
     M_H2O = 2 * molar_mass_from_Z(1, 1) + molar_mass_from_Z(8, 16)
     mod = allotrope_theta_modifier("ice_ih")
@@ -518,7 +517,7 @@ def test_paper_comparisons_z_scores_finite_and_logged():
 
 def _register_paper_metrics():
     try:
-        from pyhqiv.arena.metrics import register_metric, Metric
+        from pyhqiv.arena.metrics import Metric, register_metric
     except Exception:
         return
     # Example aggregate metrics

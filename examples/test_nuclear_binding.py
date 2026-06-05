@@ -9,11 +9,10 @@ Run: python examples/test_nuclear_binding.py
 """
 
 import numpy as np
-from scipy.optimize import minimize_scalar
-from pyhqiv.lattice import discrete_mode_count, curvature_imprint_delta_E
-from pyhqiv.constants import GAMMA, T_PL_GEV, T_LOCK_NOW_GEV, M_TRANS, L_PLANCK_M
 from pyhqiv.atom import HQIVAtom
-from pyhqiv.constants import HBAR_C_MEV_FM
+from pyhqiv.constants import GAMMA, HBAR_C_MEV_FM, L_PLANCK_M, M_TRANS, T_LOCK_NOW_GEV, T_PL_GEV
+from pyhqiv.lattice import curvature_imprint_delta_E, discrete_mode_count
+from scipy.optimize import minimize_scalar
 
 # Bohr radius (m); 4πε₀ℏ²/(m_e e²) ≈ 5.29e-11
 A0_M: float = 5.29177210903e-11
@@ -519,7 +518,7 @@ if __name__ == "__main__":
         print(f"   overlap (vol)    = {ov_t:.4g}  (volume inside both spheres)")
         print(f"   wrap_conc        = {wrap_c:.4g}  (modes wrap around horizons → concentrate toward partner)")
         if ratio_ov > 1e6:
-            print(f"   Casimir uses     = wrap-around concentration  (not overlap volume)")
+            print("   Casimir uses     = wrap-around concentration  (not overlap volume)")
         else:
             print(f"   overlap ratio    = {ratio_ov:.4f}×  (two vs single Θ)")
         print(f"   E_cas_overlap    = {info['E_cas_overlap']:.4g}  (from wrap-around)")

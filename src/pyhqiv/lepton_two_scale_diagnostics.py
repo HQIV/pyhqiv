@@ -21,6 +21,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# ħc / alpha loaded from witnesses (Lean-referenced conversions + SM embedding); no literals here.
+from pyhqiv.lean_witnesses import load_lean_witnesses as _load_w
 from pyhqiv.lepton_resonance_ladder import (
     M_E,
     M_MU,
@@ -28,15 +30,11 @@ from pyhqiv.lepton_resonance_ladder import (
     PDG_ELECTRON_MEV,
     PDG_MUON_MEV,
     PDG_TAU_MEV,
-    lepton_masses_gev_from_electron_anchor,
     lepton_masses_gev_from_tau_anchor,
     lepton_resonance_relative_errors_vs_pdg,
     lepton_resonance_relative_errors_vs_pdg_electron_anchor,
     shell_surface,
 )
-
-# ħc / alpha loaded from witnesses (Lean-referenced conversions + SM embedding); no literals here.
-from pyhqiv.lean_witnesses import load_lean_witnesses as _load_w
 
 _wloc = _load_w()
 HBAR_C_MEV_FM = _wloc.get_float("HBAR_C_MEV_FM_local") if "HBAR_C_MEV_FM_local" in _wloc.data else _wloc.get_float("hbar_MeV_s") * 1e9 * 1.6e-13 / 197.3 * 197.3  # fallback path uses witness factors

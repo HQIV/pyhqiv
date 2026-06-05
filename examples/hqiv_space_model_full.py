@@ -25,21 +25,19 @@ if __name__ == "__main__":
     sys.path.insert(0, str(root / "src"))
 
 from pyhqiv.constants import (
-    LAPSE_COMPRESSION_PAPER,
-    OMEGA_TRUE_K_PAPER,
     AGE_WALL_GYR_PAPER,
-    AGE_APPARENT_GYR_PAPER,
+    LAPSE_COMPRESSION_PAPER,
 )
 from pyhqiv.lattice import DiscreteNullLattice
+from pyhqiv.orbit import HQIVOrbit, parker_perihelion_lapse
+from pyhqiv.redshift import HQIVRedshift
 from pyhqiv.solar_core import (
-    HQIVSolarCore,
-    phi_solar_radial_profile,
     R_SUN_M,
     RHO_CORE_CGS,
     T_CORE_MK,
+    HQIVSolarCore,
+    phi_solar_radial_profile,
 )
-from pyhqiv.redshift import HQIVRedshift, z_total_apparent
-from pyhqiv.orbit import HQIVOrbit, parker_perihelion_lapse
 
 
 def run_solar_core() -> dict:

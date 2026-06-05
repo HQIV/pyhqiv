@@ -32,6 +32,7 @@ from pyhqiv.modified_maxwell import horizon_quarter_period
 
 # 1 MeV in joules (exact, SI 2019).
 from pyhqiv.scale_witness import load_local_conditions as _lc
+
 MEV_TO_J = float(_lc()["compton_MeV_to_J"])
 
 

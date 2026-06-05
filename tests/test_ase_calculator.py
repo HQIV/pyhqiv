@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from pyhqiv.ase_interface import (
     hqiv_energy_at_positions,
     hqiv_forces_analytic,
@@ -71,7 +70,6 @@ def test_hqiv_calculator_energy_forces_stress():
     """When ASE is installed: HQIVCalculator returns energy, forces, stress."""
     try:
         from ase import Atoms
-
         from pyhqiv.ase_interface import HQIVCalculator
     except ImportError:
         pytest.skip("ASE not installed (pip install pyhqiv[ase])")

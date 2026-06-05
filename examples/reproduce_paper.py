@@ -21,31 +21,30 @@ if __name__ == "__main__" and str(Path(__file__).resolve().parent.parent) not in
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
-
+from pyhqiv.algebra import OctonionHQIVAlgebra
 from pyhqiv.constants import (
-    GAMMA,
-    ALPHA,
-    T_LOCK_GEV,
-    T_CMB_K,
-    T_PL_GEV,
-    M_TRANS,
-    COMBINATORIAL_INVARIANT,
-    OMEGA_TRUE_K_PAPER,
-    LAPSE_COMPRESSION_PAPER,
-    AGE_WALL_GYR_PAPER,
-    AGE_APPARENT_GYR_PAPER,
-    HBAR_C_EV_ANG,
     A_LOC_ANG,
+    AGE_APPARENT_GYR_PAPER,
+    AGE_WALL_GYR_PAPER,
+    ALPHA,
+    COMBINATORIAL_INVARIANT,
+    GAMMA,
+    HBAR_C_EV_ANG,
+    LAPSE_COMPRESSION_PAPER,
+    M_TRANS,
+    OMEGA_TRUE_K_PAPER,
+    T_CMB_K,
+    T_LOCK_GEV,
+    T_PL_GEV,
 )
 from pyhqiv.lattice import (
     DiscreteNullLattice,
-    discrete_mode_count,
     cumulative_mode_count,
     curvature_imprint_delta_E,
+    discrete_mode_count,
     omega_k_from_shell_integral,
 )
 from pyhqiv.phase import HQIVPhaseLift
-from pyhqiv.algebra import OctonionHQIVAlgebra
 
 
 def print_main_table() -> None:

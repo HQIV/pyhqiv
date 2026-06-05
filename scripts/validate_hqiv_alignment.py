@@ -37,7 +37,7 @@ import math
 import os
 import subprocess
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +46,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from pyhqiv.lean_witnesses import LeanWitnessError, load_lean_witnesses  # type: ignore
+from pyhqiv.lean_witnesses import load_lean_witnesses  # type: ignore
 
 # pyhqiv modules used for alignment (import inside functions where possible to keep gate light)
 # We prefer top-level re-exports or stable APIs.
@@ -107,7 +107,7 @@ def run_lean_export_if_possible(lean_root: Path | None) -> Path | None:
     """
     if not lean_root or not lean_root.exists():
         return None
-    lake = lean_root / "lake"
+    lean_root / "lake"
     if not (lean_root / "lakefile.toml").exists():
         # try parent (for HQIV_LEAN/hqiv-lean layouts)
         if (lean_root.parent / "lakefile.toml").exists():
@@ -118,15 +118,14 @@ def run_lean_export_if_possible(lean_root: Path | None) -> Path | None:
     # We do not require the heavy full target here; alignment uses what the
     # current exporter + witnesses provide. Full cert is Stage 1.
     try:
-        env = os.environ.copy()
+        os.environ.copy()
         # Ensure elan/lake in PATH if present via lake env later.
         cmd = ["lake", "env", "lean", "-q", "--run", "scripts/export_witnesses.lean"]
         print(f"[alignment] Attempting fresh Lean export in {lean_root} ...", file=sys.stderr)
         res = subprocess.run(
             cmd,
             cwd=lean_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             timeout=180,  # generous but not hours; full builds are separate gate
         )
@@ -182,8 +181,10 @@ def build_alignment_checks(witnesses: Any, lean_root_used: str | None) -> list[A
             curvature_norm_combinatorial,
             omega_k_at_horizon,
             omega_k_partial,
-            reference_m as py_reference_m,
             shell_shape,
+        )
+        from pyhqiv.lightcone import (
+            reference_m as py_reference_m,
         )
 
         # Combinatorial norm must be exactly 6^7 * sqrt(3) — Lean proves the count.
@@ -192,7 +193,11 @@ def build_alignment_checks(witnesses: Any, lean_root_used: str | None) -> list[A
         # Lean value is the same expression; we assert internal + that it is positive and large.
         # To avoid hardcode, we re-derive from the 3*2*7 + sqrt(3) via py helpers if available.
         try:
-            from pyhqiv.lightcone import cube_directions, octonion_imaginary_dim, unit_cube_half_diagonal
+            from pyhqiv.lightcone import (
+                cube_directions,
+                octonion_imaginary_dim,
+                unit_cube_half_diagonal,
+            )
 
             comb_lean_derived = float(cube_directions() ** octonion_imaginary_dim()) * unit_cube_half_diagonal()
         except Exception:
@@ -306,7 +311,7 @@ def build_alignment_checks(witnesses: Any, lean_root_used: str | None) -> list[A
 
     # --- 4. Mode / lattice combinatorics (py mirrors Lean lattice counts) ---
     try:
-        from pyhqiv.lightcone import available_modes, lattice_simplex_count, lattice_step_count
+        from pyhqiv.lightcone import available_modes, lattice_step_count
 
         # Exercise: available_modes(m) > 0 for m>=0, and lattice_step_count consistent
         mref = int(ref_m)

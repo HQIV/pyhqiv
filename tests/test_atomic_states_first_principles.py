@@ -8,7 +8,6 @@ Tests for first-principles atomic energy levels (atomic_states_first_principles)
 """
 
 import pytest
-
 from pyhqiv.atomic_states_first_principles import (
     electron_mass_and_wave_packet,
     find_atomic_energy_levels,

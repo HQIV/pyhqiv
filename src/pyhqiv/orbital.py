@@ -31,11 +31,9 @@ from typing import Union
 
 import numpy as np
 
-from pyhqiv.fluid import f_inertia as _f_inertia
-from pyhqiv.lightcone import alpha as get_alpha
-from pyhqiv.metric import gamma_hqiv
 from pyhqiv.auxiliary_field import phi_of_shell
-from pyhqiv.scale_witness import load_local_conditions
+from pyhqiv.fluid import f_inertia as _f_inertia
+from pyhqiv.metric import gamma_hqiv
 
 
 def hqiv_inertia_factor(

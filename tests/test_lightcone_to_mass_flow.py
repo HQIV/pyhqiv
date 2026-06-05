@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import math
 
+from pyhqiv import now_setters
 from pyhqiv.auxiliary_field import phi_of_shell, shell_temperature
 from pyhqiv.lean_witnesses import load_lean_witnesses
 from pyhqiv.lightcone import (
@@ -29,7 +30,6 @@ from pyhqiv.lightcone import (
 )
 from pyhqiv.metric import hqvm_lapse
 from pyhqiv.now import build_preliminary_now
-from pyhqiv import now_setters
 from pyhqiv.sm_gr_unification import m_electron_natural
 from pyhqiv.sm_mass_ladder import natural_mass_to_eV, sm_mass_from_geometry_eV
 

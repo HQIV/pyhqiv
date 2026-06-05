@@ -6,7 +6,6 @@ Measured-value comparisons belong in tests/data and tests only.
 
 from pathlib import Path
 
-
 FORBIDDEN_TOKENS = (
     "nucleon_proton_ground_MeV",
     "nucleon_neutron_ground_MeV",

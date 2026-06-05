@@ -27,7 +27,7 @@ Key definitions (Lean form, evaluated at the electron-horizon base shell):
 
 from __future__ import annotations
 
-from typing import Dict, Sequence
+from typing import Dict
 
 from pyhqiv.auxiliary_field import shell_mass_geometry_factor
 from pyhqiv.lean_witnesses import load_lean_witnesses

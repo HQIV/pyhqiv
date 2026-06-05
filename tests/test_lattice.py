@@ -2,9 +2,7 @@
 
 import numpy as np
 import pytest
-
-from pyhqiv.constants import ALPHA, T_PL_GEV
-from pyhqiv.constants import L_PLANCK_M, M_TRANS
+from pyhqiv.constants import ALPHA, L_PLANCK_M, M_TRANS, T_PL_GEV
 from pyhqiv.lattice import (
     DiscreteNullLattice,
     curvature_imprint_delta_E,

@@ -28,15 +28,12 @@ live in ``pyhqiv.spherical_harmonics`` for multipole and partial-wave bookkeepin
 
 from __future__ import annotations
 
-import cmath
-from dataclasses import dataclass
 import math
 from typing import Callable
 
-from pyhqiv.metric import hqvm_lapse
 from pyhqiv.forces import hbar_si
+from pyhqiv.metric import hqvm_lapse
 from pyhqiv.omaxwell_couplings import coulomb_strength_shell, expected_ground_energy_at_shell
-
 
 Wavefunction = Callable[[tuple[float, float, float]], complex]
 Operator = Callable[[Wavefunction], Wavefunction]  # H: ψ ↦ Hψ

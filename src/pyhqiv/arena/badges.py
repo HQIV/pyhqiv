@@ -15,8 +15,7 @@ They are intentionally conservative — only awarded on *merged* work for the
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Any, Optional
-from datetime import datetime
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)

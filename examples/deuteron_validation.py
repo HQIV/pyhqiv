@@ -39,6 +39,12 @@ def main() -> None:
     print(f"Free proton E:    {E_p:.4f} MeV")
     print(f"Decay allowed (n → p + e⁻ + ν̄): {decay_allowed}  (expect True)")
 
+    # Stubs for the optional UniversalSystem demo (names not present in this isolated example file)
+    M_PROTON_MEV = 938.272
+    M_NEUTRON_MEV = 939.565
+    def get_hqiv_nuclear_constants():
+        return {"LATTICE_BASE_M": 4}
+
     # Optional: same via HQIVUniversalSystem (deuteron as 2 particles, 6-quark mode)
     from pyhqiv.universal_system import HQIVUniversalSystem
     const = get_hqiv_nuclear_constants()

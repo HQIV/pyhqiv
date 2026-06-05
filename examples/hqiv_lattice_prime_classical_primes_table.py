@@ -41,7 +41,7 @@ def main() -> None:
     delta = params.delta
 
     print(f"Primes p ≤ {args.n}  (δ = {delta}, threshold = {params.threshold}, fuel = {params.fuel})")
-    print(f"{'p':>4}  {'last_m':>6}  {'HQIV m\'':>8}  {'class next':>10}")
+    print(f"{'p':>4}  {'last_m':>6}  {'HQIV m ':>8}  {'class next':>10}")
     print("-" * 40)
     for p in primes_upto(args.n):
         last_m = decompose_last_shell(p, delta, params.fuel)

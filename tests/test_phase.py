@@ -1,7 +1,6 @@
 """Tests for HQIVPhaseLift and δθ′, ˙δθ′, lapse."""
 
 import numpy as np
-
 from pyhqiv.constants import GAMMA, LAPSE_COMPRESSION_PAPER
 from pyhqiv.phase import (
     HQIVPhaseLift,

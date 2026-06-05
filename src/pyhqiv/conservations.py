@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pyhqiv.metric import hqvm_lapse, h0, time_angle, two_pi
+from pyhqiv.metric import hqvm_lapse, time_angle, two_pi
 
 
 def structure_from_o_dim() -> int:

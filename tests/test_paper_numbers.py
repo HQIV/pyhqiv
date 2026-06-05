@@ -8,11 +8,11 @@ import json
 import math
 from pathlib import Path
 
-import numpy as np
-
-from pyhqiv.auxiliary_field import shell_temperature
+from pyhqiv.lean_witnesses import load_lean_witnesses
 from pyhqiv.lightcone import (
     alpha as lightcone_alpha,
+)
+from pyhqiv.lightcone import (
     available_modes,
     curvature_norm_combinatorial,
     omega_k_at_horizon,
@@ -20,7 +20,6 @@ from pyhqiv.lightcone import (
 )
 from pyhqiv.metric import gamma_hqiv, hqvm_lapse
 from pyhqiv.scale_witness import local_cmb_temperature_K
-from pyhqiv.lean_witnesses import load_lean_witnesses
 from pyhqiv.so8_generators import load_so8_generators
 
 
@@ -77,7 +76,7 @@ def test_omega_k_at_horizon_paper():
 
 def test_lapse_and_ages_paper():
     """Lapse and age ratios from paper (HQIV side)."""
-    reported_lapse = _load_reported()["lapse_compression_paper"]["value"]
+    _load_reported()["lapse_compression_paper"]["value"]
     # sample at phi=0.4 (gamma), t=1 gives factor; the full age ratio from cosmology
     l = hqvm_lapse(0.0, 0.4, 1.0)
     assert abs(l - 1.4) < 0.1  # basic

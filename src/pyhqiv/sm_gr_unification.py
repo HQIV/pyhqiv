@@ -23,6 +23,7 @@ from dataclasses import dataclass
 
 from pyhqiv.lean_witnesses import load_lean_witnesses
 
+
 def alpha_gut() -> float:
     """
     alpha_GUT (Lean witness export).

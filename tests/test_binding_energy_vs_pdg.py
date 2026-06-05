@@ -19,7 +19,6 @@ from __future__ import annotations
 import math
 
 from pyhqiv.isotope_ladder import IsotopeLadderConfig, IsotopeState, nuclear_binding_energy_mev
-
 from tests.data.nuclear_binding_reference import (
     AME2020_BINDING_MEV,
     CODATA_2018_NEUTRON_MEV,

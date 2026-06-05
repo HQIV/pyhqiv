@@ -7,7 +7,6 @@ confined_energy_mev(flavor_content).
 """
 
 import numpy as np
-import pytest
 
 from tests.data.particle_masses_pdg import (
     HADRON_LABELS,

@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pyhqiv.lepton_resonance_ladder import M_E, M_MU, M_TAU
 from pyhqiv.auxiliary_field import phi_of_shell
+from pyhqiv.lepton_resonance_ladder import M_E, M_MU, M_TAU
 from pyhqiv.now import shell_index_for_temperature
 from pyhqiv.now_setters import m_now
-
 from pyhqiv.scale_witness import load_local_conditions as _lc
+
 T_CMB_NATURAL_DEFAULT = float(_lc()["T_CMB_NATURAL_DEFAULT"])
 
 

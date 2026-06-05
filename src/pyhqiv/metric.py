@@ -12,8 +12,8 @@ the homogeneous Friedmann relation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 from pyhqiv.lightcone import alpha
 

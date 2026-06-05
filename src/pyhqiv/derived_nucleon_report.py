@@ -11,7 +11,6 @@ from typing import Dict
 
 from pyhqiv.lean_witnesses import load_lean_witnesses
 
-
 DERIVED_NUCLEON_KEYS = (
     "derivedProtonMass_MeV",
     "derivedNeutronMass_MeV",

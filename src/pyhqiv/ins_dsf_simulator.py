@@ -45,8 +45,8 @@ with spin-1/2 operators :math:`S^a = \\sigma^a / 2`.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np

@@ -16,9 +16,9 @@ import numpy as np
 
 
 def main() -> None:
-    from pyhqiv.universal_system import HQIVUniversalSystem
-    from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
     from pyhqiv.constants import M_NEUTRON_MEV
+    from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants
+    from pyhqiv.universal_system import HQIVUniversalSystem
 
     const = get_hqiv_nuclear_constants()
     L = const["LATTICE_BASE_M"]

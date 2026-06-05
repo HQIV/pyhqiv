@@ -1,5 +1,6 @@
 import math
 
+from pyhqiv.now_setters import nowSetter
 from pyhqiv.quantum_oracles import (
     estimate_period_from_peaks,
     hidden_tag_of,
@@ -9,7 +10,6 @@ from pyhqiv.quantum_oracles import (
     period_probability_distribution,
     period_support,
 )
-from pyhqiv.now_setters import nowSetter
 
 
 def test_hidden_tag_of_period4() -> None:

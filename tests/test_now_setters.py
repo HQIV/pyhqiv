@@ -1,6 +1,12 @@
 from pyhqiv.auxiliary_field import phi_of_shell
 from pyhqiv.lean_witnesses import load_lean_witnesses
-from pyhqiv.now_setters import active_slice, m_now, nowSetter, now_geometry, now_set_from_electron_horizon
+from pyhqiv.now_setters import (
+    active_slice,
+    m_now,
+    now_geometry,
+    now_set_from_electron_horizon,
+    nowSetter,
+)
 
 
 def test_now_defaults_to_lean_reference_shell() -> None:

@@ -28,7 +28,7 @@ from pyhqiv.action import s_hqvm_grav, s_hqvm_grav_zero_holds
 from pyhqiv.auxiliary_field import shell_temperature
 from pyhqiv.gr_from_maxwell import hqvm_friedmann_power_residual
 from pyhqiv.lightcone import cumulative_lattice_simplex_count, lattice_simplex_count
-from pyhqiv.metric import g_eff, three_minus_gamma, hqvm_friedmann_residual
+from pyhqiv.metric import g_eff, hqvm_friedmann_residual, three_minus_gamma
 
 
 def horizon_entropy_counting(m: int, *, k_b: float = 1.0) -> float:

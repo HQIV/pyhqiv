@@ -60,7 +60,6 @@ def test_random_unitary_phase_gates_preserve_norm(L: int) -> None:
 
 def test_prune_preserves_sparse_norm_when_all_indices_kept() -> None:
     """``lattice_next_prime_prune_preserves_sparse_norm_sq`` surrogate."""
-    L = 2
     r: osh.SparseRegister = [(0, 1j), (1, 2 + 0j)]
     flipped = [0, 1, 2]
     pr = osh.prune_to_flipped(flipped, r)

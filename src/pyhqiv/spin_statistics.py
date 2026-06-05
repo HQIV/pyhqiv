@@ -16,8 +16,8 @@ where ΔE is in MeV.
 from __future__ import annotations
 
 import math
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 
 class SpinClass(str, Enum):

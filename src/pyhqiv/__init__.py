@@ -26,41 +26,65 @@ Current rebuild status:
 - `pyhqiv.regimes` offers thin **galactic**, **black-hole / horizon**, and **quantum** façades over existing modules (Lean citations in each file).
 """
 
+from pyhqiv.action import (
+    ActionSnapshot,
+    build_action_snapshot,
+    friedmann_from_action_equivalence_holds,
+    s_hqvm_grav,
+    s_hqvm_grav_zero_holds,
+)
 from pyhqiv.auxiliary_field import (
+    phase_lift_coeff_real,
     phi_of_real_shell,
     phi_of_shell,
     phi_of_temperature,
     phi_temperature_coefficient,
-    phase_lift_coeff_real,
     shell_mass_geometry_factor,
     shell_shape_real,
     shell_temperature,
     shell_temperature_factor,
     t_pl_natural,
 )
-from pyhqiv.lightcone import (
-    ALPHA_EXACT,
-    alpha,
-    available_modes,
-    cube_axes,
-    cube_directions,
-    curvature_density,
-    curvature_integral,
-    curvature_norm_combinatorial,
-    cumulative_lattice_simplex_count,
-    delta_e,
-    lattice_simplex_count,
-    lattice_step_count,
-    new_modes,
-    octonion_imaginary_dim,
-    omega_k_at_horizon,
-    omega_k_partial,
-    qcd_shell,
-    x_over_theta_from_horizons,
-    reference_m,
-    shell_shape,
-    signs_per_axis,
-    unit_cube_half_diagonal,
+from pyhqiv.benchmark_osh_vs_dense import (
+    BenchCase as ProteinOshBenchCase,
+)
+from pyhqiv.benchmark_osh_vs_dense import (
+    format_table_row as protein_osh_benchmark_format_row,
+)
+from pyhqiv.benchmark_osh_vs_dense import (
+    paper_table_cases as protein_osh_benchmark_paper_cases,
+)
+from pyhqiv.benchmark_osh_vs_dense import (
+    run_case as protein_osh_benchmark_run_case,
+)
+from pyhqiv.benchmark_osh_vs_dense import (
+    run_paper_table as protein_osh_benchmark_run_paper_table,
+)
+from pyhqiv.carrier import So8Carrier, hamiltonian_from_so8_coeffs
+from pyhqiv.conservations import (
+    ConservationCheck,
+    build_conservation_check,
+    lapse_forces_time_angle_term,
+    phase_conservation_numeric,
+    structure_from_o_dim,
+)
+from pyhqiv.derived_gauge_report import (
+    DERIVED_KEYS,
+    derived_gauge_outputs,
+    verify_pure_derived_keys_only,
+)
+from pyhqiv.derived_nucleon_report import (
+    DERIVED_NUCLEON_KEYS,
+    derived_nucleon_outputs,
+    format_nucleon_report,
+    verify_no_missing_keys,
+)
+from pyhqiv.fluid import (
+    PlasmaFluidClosureHypothesis,
+    eddy_viscosity,
+    f_inertia,
+    g_vac_vector,
+    modified_momentum_rhs,
 )
 from pyhqiv.forces import (
     ForceSector,
@@ -80,6 +104,72 @@ from pyhqiv.forces import (
     o_component_to_sector,
     time_axis,
     time_natural_to_si,
+)
+from pyhqiv.gr_from_maxwell import (
+    hqvm_friedmann_power_residual,
+    o_maxwell_determines_hqvm_gr_homogeneous_equivalence,
+)
+from pyhqiv.hqiv_nuclei import (
+    SPECTRA_DEUTERON_BINDING_MEV,
+    Nucleus,
+    casimir_energy_surface,
+    deuteron_binding_scale,
+    ladder_path_from_ZN,
+    make_nucleus,
+    spherical_harmonic_cumulative_count,
+    valley_count_from_A,
+)
+from pyhqiv.ins_dsf_simulator import (
+    INSXxzDenseVsTrotter,
+    INSXxzResult,
+    apply_two_qubit_unitary_state,
+    benchmark_ins_xxz_dense_vs_trotter,
+    center_site_index,
+    rgf_to_spectral_mirror_avg,
+    simulate_xxz_rgf_center_kick,
+    simulate_xxz_rgf_center_kick_trotter,
+    spectrum_metrics_mse_wasserstein,
+    xxz_hamiltonian_open_chain,
+    xxz_nnn_hamiltonian_open_chain,
+)
+from pyhqiv.isotope_ladder import (
+    DecayMode,
+    DecayStep,
+    IsotopeLadderConfig,
+    IsotopeState,
+    beta_half_life_s,
+    cross_section_geometric_barns,
+    cross_section_geometric_isotope_barns,
+    enumerate_decay_steps,
+    exoergic_decay_steps,
+    gamma_half_life_proxy_s,
+    nuclear_binding_energy_mev,
+    nucleus_mass_mev,
+    rotational_excitation_mev,
+)
+from pyhqiv.lightcone import (
+    ALPHA_EXACT,
+    alpha,
+    available_modes,
+    cube_axes,
+    cube_directions,
+    cumulative_lattice_simplex_count,
+    curvature_density,
+    curvature_integral,
+    curvature_norm_combinatorial,
+    delta_e,
+    lattice_simplex_count,
+    lattice_step_count,
+    new_modes,
+    octonion_imaginary_dim,
+    omega_k_at_horizon,
+    omega_k_partial,
+    qcd_shell,
+    reference_m,
+    shell_shape,
+    signs_per_axis,
+    unit_cube_half_diagonal,
+    x_over_theta_from_horizons,
 )
 from pyhqiv.metric import (
     HQVMMetricSnapshot,
@@ -117,120 +207,6 @@ from pyhqiv.modified_maxwell import (
     maxwell3d_div_e,
     spatial_indices,
 )
-from pyhqiv.fluid import (
-    PlasmaFluidClosureHypothesis,
-    eddy_viscosity,
-    f_inertia,
-    g_vac_vector,
-    modified_momentum_rhs,
-)
-from pyhqiv.orbital import (
-    hqiv_flyby_inertia_screen,
-    hqiv_galaxy_rotation_point,
-    hqiv_inertia_factor,
-    rindler_denominator,
-)
-from pyhqiv.thermo import (
-    HQIVThermoSystem,
-    PhaseDiagramGenerator,
-    compute_free_energy,
-    hqiv_answer_thermo,
-    molar_mass_from_Z,
-    allotrope_theta_modifier,
-    TESTABLE_PREDICTIONS,
-)
-from pyhqiv.conservations import (
-    ConservationCheck,
-    build_conservation_check,
-    lapse_forces_time_angle_term,
-    phase_conservation_numeric,
-    structure_from_o_dim,
-)
-from pyhqiv.action import (
-    ActionSnapshot,
-    build_action_snapshot,
-    friedmann_from_action_equivalence_holds,
-    s_hqvm_grav,
-    s_hqvm_grav_zero_holds,
-)
-from pyhqiv.gr_from_maxwell import (
-    hqvm_friedmann_power_residual,
-    o_maxwell_determines_hqvm_gr_homogeneous_equivalence,
-)
-from pyhqiv.thermodynamic_fundamentals import (
-    clausius_equality_proxy_power_form,
-    clausius_residual_proxy,
-    entropy_increment_per_shell,
-    entropy_production_proxy,
-    equilibrium_rho_total_for_phi,
-    horizon_entropy_counting,
-    local_equilibrium_proxy,
-    second_law_arrow_holds,
-    temperature_at_shell,
-)
-from pyhqiv.spin_statistics import (
-    ResonanceTimes,
-    SpinClass,
-    exchange_phase_identical,
-    hbar_MeV_s,
-    resonance_half_life,
-    resonance_lifetime,
-    spin_statistics_exchange_sign_matches_two_pi,
-    two_pi_phase,
-    build_resonance_times,
-)
-from pyhqiv.spherical_harmonics import (
-    laplace_beltrami_eigenvalue_S2,
-    real_basis_dimension,
-    spherical_harmonic_Y,
-    spherical_harmonic_Y_real,
-    spherical_harmonic_real_basis_matrix,
-)
-from pyhqiv.isotope_ladder import (
-    DecayMode,
-    DecayStep,
-    IsotopeLadderConfig,
-    IsotopeState,
-    beta_half_life_s,
-    cross_section_geometric_barns,
-    cross_section_geometric_isotope_barns,
-    enumerate_decay_steps,
-    exoergic_decay_steps,
-    gamma_half_life_proxy_s,
-    nuclear_binding_energy_mev,
-    nucleus_mass_mev,
-    rotational_excitation_mev,
-)
-from pyhqiv.hqiv_nuclei import (
-    SPECTRA_DEUTERON_BINDING_MEV,
-    Nucleus,
-    casimir_energy_surface,
-    deuteron_binding_scale,
-    ladder_path_from_ZN,
-    make_nucleus,
-    spherical_harmonic_cumulative_count,
-    valley_count_from_A,
-)
-from pyhqiv.omaxwell_couplings import (
-    alpha_eff_at_shell,
-    alpha_eff_from_phi,
-    alpha_gut,
-    coulomb_strength_shell,
-    expected_ground_energy_at_shell,
-    one_over_alpha_eff,
-)
-from pyhqiv.quantum_mechanics import (
-    Operator,
-    Wavefunction,
-    coulomb_potential,
-    expected_ground_energy_shell,
-    expected_ground_energy_at_shell,
-    lapse_corrected_hamiltonian,
-    lapse_factor,
-    satisfies_lapse_corrected_schrodinger_residual,
-    satisfies_time_dependent_schrodinger_residual,
-    shell_coulomb_strength,
-)
 from pyhqiv.now import (
     PreliminaryNow,
     TemperatureWitness,
@@ -250,84 +226,24 @@ from pyhqiv.now_setters import (
     NowGeometry,
     active_slice,
     m_now,
-    nowSetter,
     now_geometry,
     now_set_from_electron_horizon,
+    nowSetter,
     rescale_geometry,
 )
-from pyhqiv.sm_gr_unification import (
-    M_Pl_natural,
-    M_Z_natural,
-    SMConstantsAtNow,
-    alpha_EM_at_MZ,
-    alpha_s_at_MZ,
-    m_electron_natural,
-    m_neutron_MeV_central,
-    m_proton_MeV_central,
-    one_over_alpha_EM_at_MZ,
-    sm_constants_at_now,
-    sin2thetaW_at_MZ,
+from pyhqiv.omaxwell_couplings import (
+    alpha_eff_at_shell,
+    alpha_eff_from_phi,
+    alpha_gut,
+    coulomb_strength_shell,
+    expected_ground_energy_at_shell,
+    one_over_alpha_eff,
 )
-
-from pyhqiv.sm_embedding import (
-    SMLabel,
-    sm_generation_index,
-    sm_generation_offset,
-    sm_hypercharge_weight,
-    sm_sector_multiplicity,
-)
-from pyhqiv.sm_embedding_sim import (
-    HYPERCHARGE_Y2 as sm_hypercharge_y2_table,
-    Su2Generators as SM_SU2_Generators,
-    evolve_su2 as sm_evolve_su2_on_8s,
-    evolve_u1_hypercharge_sm_basis as sm_evolve_u1_hypercharge_8s,
-    hypercharge_eigenvalue as sm_hypercharge_eigenvalue_fin8,
-    su2_l_generators_from_octonion as sm_su2_l_generators_from_octonion,
-)
-
-from pyhqiv.sm_mass_ladder import (
-    sm_mass_from_geometry,
-    sm_mass_shell_real,
-    electron_geometry_factor,
-    sm_masses_from_geometry_at_default_now,
-    sm_masses_from_geometry_eV_at_default_now,
-    natural_mass_to_eV,
-)
-from pyhqiv.derived_gauge_report import (
-    DERIVED_KEYS,
-    derived_gauge_outputs,
-    verify_pure_derived_keys_only,
-)
-
-from pyhqiv.derived_nucleon_report import (
-    DERIVED_NUCLEON_KEYS,
-    derived_nucleon_outputs,
-    format_nucleon_report,
-    verify_no_missing_keys,
-)
-
-from pyhqiv.so8_generators import (
-    So8Generators,
-    dump_so8_generators_json,
-    lie_bracket,
-    load_so8_generators,
-    load_so8_generators_auto,
-    load_so8_generators_from_json,
-    load_so8_generators_from_packaged_json,
-    so8_tensor_sha256_hex,
-    upper_triangle_coord,
-)
-from pyhqiv.carrier import So8Carrier, hamiltonian_from_so8_coeffs
-from pyhqiv.state import HQIVState
-from pyhqiv.quantum_simulator import (
-    Circuit,
-    ComplexArray,
-    Gates,
-    NoiseModel,
-    QuantumState,
-    RunResult,
-    ValueWithError,
-    run_circuit,
+from pyhqiv.orbital import (
+    hqiv_flyby_inertia_screen,
+    hqiv_galaxy_rotation_point,
+    hqiv_inertia_factor,
+    rindler_denominator,
 )
 from pyhqiv.quantum_lean_backing import (
     DEFAULT_QUANTUM_SPECS,
@@ -335,6 +251,21 @@ from pyhqiv.quantum_lean_backing import (
     quantum_lean_backing_ok,
     validate_quantum_lean_backing,
 )
+from pyhqiv.quantum_mechanics import (
+    Operator,
+    Wavefunction,
+    coulomb_potential,
+    expected_ground_energy_at_shell,
+    expected_ground_energy_shell,
+    lapse_corrected_hamiltonian,
+    lapse_factor,
+    satisfies_lapse_corrected_schrodinger_residual,
+    satisfies_time_dependent_schrodinger_residual,
+    shell_coulomb_strength,
+)
+
+# vacuum zero point matching paper script for CC solution (finite modes vs QFT disaster)
+from pyhqiv.quantum_optics.horizon_qed import vacuum_zero_point_natural
 from pyhqiv.quantum_oracles import (
     GroverResult,
     OraclePredicate,
@@ -348,28 +279,111 @@ from pyhqiv.quantum_oracles import (
     period_probability_distribution,
     period_support,
 )
-
-# vacuum zero point matching paper script for CC solution (finite modes vs QFT disaster)
-from pyhqiv.quantum_optics.horizon_qed import vacuum_zero_point_natural
-from pyhqiv.benchmark_osh_vs_dense import (
-    BenchCase as ProteinOshBenchCase,
-    format_table_row as protein_osh_benchmark_format_row,
-    paper_table_cases as protein_osh_benchmark_paper_cases,
-    run_case as protein_osh_benchmark_run_case,
-    run_paper_table as protein_osh_benchmark_run_paper_table,
+from pyhqiv.quantum_simulator import (
+    Circuit,
+    ComplexArray,
+    Gates,
+    NoiseModel,
+    QuantumState,
+    RunResult,
+    ValueWithError,
+    run_circuit,
 )
-from pyhqiv.ins_dsf_simulator import (
-    INSXxzDenseVsTrotter,
-    INSXxzResult,
-    apply_two_qubit_unitary_state,
-    benchmark_ins_xxz_dense_vs_trotter,
-    center_site_index,
-    rgf_to_spectral_mirror_avg,
-    simulate_xxz_rgf_center_kick,
-    simulate_xxz_rgf_center_kick_trotter,
-    spectrum_metrics_mse_wasserstein,
-    xxz_hamiltonian_open_chain,
-    xxz_nnn_hamiltonian_open_chain,
+from pyhqiv.sm_embedding import (
+    SMLabel,
+    sm_generation_index,
+    sm_generation_offset,
+    sm_hypercharge_weight,
+    sm_sector_multiplicity,
+)
+from pyhqiv.sm_embedding_sim import (
+    HYPERCHARGE_Y2 as sm_hypercharge_y2_table,
+)
+from pyhqiv.sm_embedding_sim import (
+    Su2Generators as SM_SU2_Generators,
+)
+from pyhqiv.sm_embedding_sim import (
+    evolve_su2 as sm_evolve_su2_on_8s,
+)
+from pyhqiv.sm_embedding_sim import (
+    evolve_u1_hypercharge_sm_basis as sm_evolve_u1_hypercharge_8s,
+)
+from pyhqiv.sm_embedding_sim import (
+    hypercharge_eigenvalue as sm_hypercharge_eigenvalue_fin8,
+)
+from pyhqiv.sm_embedding_sim import (
+    su2_l_generators_from_octonion as sm_su2_l_generators_from_octonion,
+)
+from pyhqiv.sm_gr_unification import (
+    M_Pl_natural,
+    M_Z_natural,
+    SMConstantsAtNow,
+    alpha_EM_at_MZ,
+    alpha_s_at_MZ,
+    m_electron_natural,
+    m_neutron_MeV_central,
+    m_proton_MeV_central,
+    one_over_alpha_EM_at_MZ,
+    sin2thetaW_at_MZ,
+    sm_constants_at_now,
+)
+from pyhqiv.sm_mass_ladder import (
+    electron_geometry_factor,
+    natural_mass_to_eV,
+    sm_mass_from_geometry,
+    sm_mass_shell_real,
+    sm_masses_from_geometry_at_default_now,
+    sm_masses_from_geometry_eV_at_default_now,
+)
+from pyhqiv.so8_generators import (
+    So8Generators,
+    dump_so8_generators_json,
+    lie_bracket,
+    load_so8_generators,
+    load_so8_generators_auto,
+    load_so8_generators_from_json,
+    load_so8_generators_from_packaged_json,
+    so8_tensor_sha256_hex,
+    upper_triangle_coord,
+)
+from pyhqiv.spherical_harmonics import (
+    laplace_beltrami_eigenvalue_S2,
+    real_basis_dimension,
+    spherical_harmonic_real_basis_matrix,
+    spherical_harmonic_Y,
+    spherical_harmonic_Y_real,
+)
+from pyhqiv.spin_statistics import (
+    ResonanceTimes,
+    SpinClass,
+    build_resonance_times,
+    exchange_phase_identical,
+    hbar_MeV_s,
+    resonance_half_life,
+    resonance_lifetime,
+    spin_statistics_exchange_sign_matches_two_pi,
+    two_pi_phase,
+)
+from pyhqiv.state import HQIVState
+from pyhqiv.thermo import (
+    TESTABLE_PREDICTIONS,
+    HQIVThermoSystem,
+    PhaseDiagramGenerator,
+    allotrope_theta_modifier,
+    compute_free_energy,
+    hqiv_answer_thermo,
+    molar_mass_from_Z,
+)
+from pyhqiv.thermodynamic_fundamentals import (
+    clausius_equality_proxy_power_form,
+    clausius_residual_proxy,
+    entropy_increment_per_shell,
+    entropy_production_proxy,
+    equilibrium_rho_total_for_phi,
+    horizon_entropy_counting,
+    local_equilibrium_proxy,
+    second_law_arrow_holds,
+    temperature_at_shell,
 )
 
 __all__ = [
@@ -654,10 +668,10 @@ except ImportError:
 
 # Re-export for top-level access (captures Lean for calculator / Arena)
 from pyhqiv.lepton_resonance_ladder import (
+    derived_omega_b_at_lockin,
+    eta10_from_dynamic_first_principles,
     tuft_hopf_kappa6,
     tuft_hopf_kappa6_second_order_correction,
-    eta10_from_dynamic_first_principles,
-    derived_omega_b_at_lockin,
 )
 
 # Surface self-clock (wall-clock age, cosmic birefringence / polarization rotation at now)

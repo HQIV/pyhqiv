@@ -16,11 +16,11 @@ Lean touchpoints: ``Hqiv/ProteinResearch/AdditiveFieldAndTorque.lean``,
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 import random
 import statistics
 import time
+from dataclasses import dataclass
 from typing import Dict, List, Sequence, Tuple
 
 Coord3 = Tuple[float, float, float]

@@ -17,13 +17,13 @@ via ``scripts/export_so8_generators_json.py``) using :func:`load_so8_generators_
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import importlib.resources as resources
 import json
+import re
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-import re
 from typing import Any, Final, List, Mapping
 
 import numpy as np

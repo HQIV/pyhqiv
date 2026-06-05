@@ -18,8 +18,6 @@ from typing import Dict, Tuple
 
 from pyhqiv.scale_witness import (
     load_local_conditions,
-    derived_proton_mass_MeV,
-    derived_neutron_mass_MeV,
     local_cmb_temperature_K,
     local_cmb_temperature_uncertainty_K,
 )
@@ -27,7 +25,7 @@ from pyhqiv.scale_witness import (
 
 def get_local_cmb() -> Tuple[float, float, str]:
     """(T_K, +/-unc_K, source)"""
-    local = load_local_conditions()
+    load_local_conditions()
     t = local_cmb_temperature_K()
     unc = local_cmb_temperature_uncertainty_K()
     src = "Planck 2018 (https://arxiv.org/abs/1807.06209); value/unc from local_conditions.json"

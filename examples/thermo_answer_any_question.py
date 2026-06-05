@@ -5,7 +5,7 @@ hqiv_answer_thermo(question) parses the question, builds the system from the
 axiom only, and returns structured answer + plot code.
 """
 
-from pyhqiv.thermo import hqiv_answer_thermo, TESTABLE_PREDICTIONS
+from pyhqiv.thermo import TESTABLE_PREDICTIONS, hqiv_answer_thermo
 
 questions = [
     "metallic hydrogen transition at 300 K",

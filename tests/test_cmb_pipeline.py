@@ -1,7 +1,6 @@
 """Tests for CMB pipeline stub: status, run() without map generation."""
 
 import pytest
-
 from pyhqiv.cmb_pipeline import HQIVCMBPipeline, cmb_pipeline_status
 
 

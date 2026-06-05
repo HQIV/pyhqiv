@@ -8,8 +8,8 @@ from pyhqiv.sm_gr_unification import (
     m_neutron_MeV_central,
     m_proton_MeV_central,
     one_over_alpha_EM_at_MZ,
-    sm_constants_at_now,
     sin2thetaW_at_MZ,
+    sm_constants_at_now,
 )
 
 

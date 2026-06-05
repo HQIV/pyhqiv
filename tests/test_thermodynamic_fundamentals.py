@@ -1,8 +1,8 @@
-import math
 
+from pyhqiv.lightcone import lattice_simplex_count
 from pyhqiv.thermodynamic_fundamentals import (
-    clausius_residual_proxy,
     clausius_equality_proxy_power_form,
+    clausius_residual_proxy,
     entropy_increment_per_shell,
     equilibrium_rho_total_for_phi,
     horizon_entropy_counting,
@@ -10,7 +10,6 @@ from pyhqiv.thermodynamic_fundamentals import (
     second_law_arrow_holds,
     temperature_at_shell,
 )
-from pyhqiv.lightcone import lattice_simplex_count
 
 
 def test_second_law_arrow_strictly_positive() -> None:

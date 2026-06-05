@@ -29,19 +29,18 @@ from enum import Enum
 from typing import Iterable
 
 from pyhqiv.hqiv_bound_states import (
-    NuclidePN,
     NetworkWeight28,
+    NuclidePN,
     e_bind_nuclear_from_network,
     m_nucleus_from_network,
     network_weight_for_nuclide,
 )
 from pyhqiv.hqiv_nuclear_spectra import R_m, half_life_from_width
 from pyhqiv.lean_witnesses import LeanWitnessError, load_lean_witnesses
-from pyhqiv.scale_witness import load_local_conditions as _load_local
 from pyhqiv.lightcone import reference_m
+from pyhqiv.scale_witness import load_local_conditions as _load_local
 from pyhqiv.spherical_harmonics import laplace_beltrami_eigenvalue_S2
 from pyhqiv.spin_statistics import resonance_half_life
-
 
 # 1 barn = 100 fm² (since 1 barn = 10⁻²⁴ cm², 1 fm² = 10⁻²⁶ cm²).
 FM2_PER_BARN: float = 100.0

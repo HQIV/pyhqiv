@@ -4,6 +4,7 @@ import numpy as np
 
 from pyhqiv.lightcone import alpha as get_alpha
 from pyhqiv.metric import gamma_hqiv as get_gamma
+
 ALPHA = get_alpha()
 GAMMA = get_gamma()
 from pyhqiv.thermo import (
@@ -171,7 +172,12 @@ def test_thermo_ase_phase_stability():
 
 def test_inputs_just_AZ_for_H2():
     """Minimal input A/Z flows to M, theta, phi, G."""
-    from pyhqiv.thermo import molar_mass_from_Z, theta_local_from_density, phi_from_rho_T, compute_free_energy
+    from pyhqiv.thermo import (
+        compute_free_energy,
+        molar_mass_from_Z,
+        phi_from_rho_T,
+        theta_local_from_density,
+    )
     M = molar_mass_from_Z(Z=1, A=2)  # just A/Z
     assert 0.002 < M < 0.0021
     rho = 0.09  # gas like
@@ -208,11 +214,9 @@ def test_allotrope_density_and_melt_for_ice_C():
 
 def test_specific_heat_proxy_and_blackbody_from_thermo_paper():
     """Specific heat proxy from ladder/blackbody finite; error bars from paper table."""
-    from pyhqiv.thermodynamic_fundamentals import temperature_at_shell, horizon_entropy_counting
+    from pyhqiv.thermodynamic_fundamentals import horizon_entropy_counting
     # from thermo_ladder_and_c3_heat.py : finite blackbody U for T=0.05, m cuts
     # here proxy Cv ~ d( U )/dT or from S = 4/3 U/T
-    T = 0.05
-    U_large = 0.0  # would compute sum Nm * om * n_bose , but use entropy ladder proxy
     s = horizon_entropy_counting(100) / 100.0  # proxy
     # Cv proxy ~ T * ds/dT but simple assert positive finite
     assert s > 0
@@ -228,7 +232,7 @@ def test_conductivity_phase_stability_proxy():
     """Conduct proxy (response like) + phase stability; input just Z."""
     from pyhqiv.thermo import molar_mass_from_Z
     # stub: for Si Z=14 , use response or fluid for sigma proxy
-    M = molar_mass_from_Z(14, 28)
+    molar_mass_from_Z(14, 28)
     # assume from crystal or response, here simple
     sigma_pred = 1e-4  # S/m order for semi
     sigma_ref, sigma_err = 1e-3, 5e-4  # example Si at RT with err from source

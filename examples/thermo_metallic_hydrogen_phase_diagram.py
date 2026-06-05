@@ -5,9 +5,10 @@ Pure HQIV first principles: no diamond-anvil or experimental input.
 From E_tot = m c² + ħ c/Δx → φ(ρ, T) → transition pressure at ρ ≈ 0.6–1.0 g/cm³.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
-from pyhqiv.thermo import HQIVHydrogen, GAMMA, plot_phase_diagram_standard_vs_hqiv
+import numpy as np
+
+from pyhqiv.thermo import GAMMA, HQIVHydrogen, plot_phase_diagram_standard_vs_hqiv
 
 # Grid: 0–10000 K, compute P_trans(T)
 T = np.linspace(0, 10000, 101)

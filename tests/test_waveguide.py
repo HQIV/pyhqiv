@@ -1,7 +1,6 @@
 """Tests for HQIV waveguide: k_c², geometry rules, mode solver."""
 
 import numpy as np
-
 from pyhqiv.constants import C_SI
 from pyhqiv.waveguide import (
     distance_to_boundary_circle,

@@ -24,9 +24,9 @@ from pyhqiv.lepton_resonance_ladder import (
     M_E,
     M_MU,
     M_TAU,
+    M_TAU_GEV_PDG_ANCHOR,
     PDG_ELECTRON_MEV,
     PDG_MUON_MEV,
-    M_TAU_GEV_PDG_ANCHOR,
     eff_corrected,
 )
 from pyhqiv.lightcone import alpha

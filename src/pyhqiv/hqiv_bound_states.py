@@ -45,13 +45,13 @@ class NetworkWeight28:
         return self.w[k]
 
     @staticmethod
-    def uniform(value_per_generator: float = 1.0) -> "NetworkWeight28":
+    def uniform(value_per_generator: float = 1.0) -> NetworkWeight28:
         """All generators carry the same weight (neutral placeholder)."""
         v = float(value_per_generator)
         return NetworkWeight28(tuple(v for _ in range(SO8_DIM)))
 
     @staticmethod
-    def from_sequence(seq: Sequence[float]) -> "NetworkWeight28":
+    def from_sequence(seq: Sequence[float]) -> NetworkWeight28:
         return NetworkWeight28(tuple(float(x) for x in seq))
 
 

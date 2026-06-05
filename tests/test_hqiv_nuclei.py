@@ -14,8 +14,8 @@ from pyhqiv.hqiv_nuclei import (
     new_modes_succ_identity,
     spherical_harmonic_cumulative_count,
     spin_statistics_half_life_matches_resonance,
-    valley_count_from_A,
     vacuum_mode_density,
+    valley_count_from_A,
 )
 
 
@@ -25,8 +25,8 @@ def test_spherical_harmonic_cumulative_count() -> None:
 
 def test_casimir_equals_modes_times_phi_over_two() -> None:
     m = 4
-    from pyhqiv.lightcone import available_modes
     from pyhqiv.auxiliary_field import phi_of_shell
+    from pyhqiv.lightcone import available_modes
 
     ce = casimir_energy_surface(m)
     assert math.isclose(ce, available_modes(m) * phi_of_shell(m) / 2.0, rel_tol=1e-12)
@@ -34,8 +34,8 @@ def test_casimir_equals_modes_times_phi_over_two() -> None:
 
 def test_deuteron_binding_scale_matches_gamma_modes_over_rm() -> None:
     m = 4
-    from pyhqiv.metric import gamma_hqiv
     from pyhqiv.hqiv_nuclear_spectra import R_m, modes
+    from pyhqiv.metric import gamma_hqiv
 
     s = deuteron_binding_scale(m)
     assert math.isclose(s, gamma_hqiv() * modes(m) / R_m(m), rel_tol=1e-12)
@@ -64,15 +64,14 @@ def test_toroidal_ring_closure_numeric() -> None:
 
 def test_vacuum_mode_density() -> None:
     m = 4
-    from pyhqiv.lightcone import available_modes
     from pyhqiv.hqiv_nuclear_spectra import R_m
+    from pyhqiv.lightcone import available_modes
 
     assert math.isclose(vacuum_mode_density(m), available_modes(m) / R_m(m), rel_tol=1e-12)
 
 
 def test_spectra_deuteron_anchor() -> None:
     # Value from Lean witness; test allows tiny jitter + records source error bar via setup
-    from tests.setup_defaults import LOCAL_CONDITIONS_WITH_ERRORS
 
     # deuteron binding is Lean spectra anchor (not PDG measurement for this test);
     # we still assert closeness to the committed Lean-derived value.

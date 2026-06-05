@@ -5,11 +5,9 @@ These ensure the engine itself is deterministic and the extension points work.
 
 from __future__ import annotations
 
-import math
-
 
 def test_arena_metrics_registry_and_order():
-    from pyhqiv.arena.metrics import build_default_metrics, register_metric, Metric
+    from pyhqiv.arena.metrics import build_default_metrics
 
     mets = build_default_metrics()
     names = [m.name for m in mets]
@@ -21,7 +19,7 @@ def test_arena_metrics_registry_and_order():
 
 
 def test_arena_scoring_perfect_baseline_gives_max_and_zero_regressions():
-    from pyhqiv.arena import compute_score, build_default_metrics
+    from pyhqiv.arena import build_default_metrics, compute_score
 
     res = compute_score(metrics=build_default_metrics())
     assert res.num_regressed_protected == 0
@@ -62,7 +60,6 @@ def test_arena_badges_award_logic():
 
 def test_alignment_script_runs_as_module():
     # Just import + basic structure; the full gate is exercised in CI and manual runs
-    import runpy
     from pathlib import Path
 
     script = Path(__file__).resolve().parents[1] / "scripts" / "validate_hqiv_alignment.py"

@@ -7,13 +7,12 @@ simulation layer while preserving clear hooks to Lean-backed formal artifacts.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 import random
+from dataclasses import dataclass
 from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
-
 
 ComplexArray = np.ndarray
 GateSpec = Tuple[str, Tuple[int, ...], Tuple[float, ...]]
@@ -75,7 +74,7 @@ class QuantumState:
             self.amplitudes = arr.copy()
             self.normalize()
 
-    def copy(self) -> "QuantumState":
+    def copy(self) -> QuantumState:
         return QuantumState(self.n_qubits, self.amplitudes.copy())
 
     def norm_sq(self) -> float:
@@ -280,43 +279,43 @@ class Circuit:
         self.n_qubits = n_qubits
         self.ops = []
 
-    def h(self, q: int) -> "Circuit":
+    def h(self, q: int) -> Circuit:
         self.ops.append(("single", (q,), ()))
         return self
 
-    def x(self, q: int) -> "Circuit":
+    def x(self, q: int) -> Circuit:
         self.ops.append(("x", (q,), ()))
         return self
 
-    def y(self, q: int) -> "Circuit":
+    def y(self, q: int) -> Circuit:
         self.ops.append(("y", (q,), ()))
         return self
 
-    def z(self, q: int) -> "Circuit":
+    def z(self, q: int) -> Circuit:
         self.ops.append(("z", (q,), ()))
         return self
 
-    def s(self, q: int) -> "Circuit":
+    def s(self, q: int) -> Circuit:
         self.ops.append(("s", (q,), ()))
         return self
 
-    def t(self, q: int) -> "Circuit":
+    def t(self, q: int) -> Circuit:
         self.ops.append(("t", (q,), ()))
         return self
 
-    def phase(self, q: int, theta: float) -> "Circuit":
+    def phase(self, q: int, theta: float) -> Circuit:
         self.ops.append(("phase", (q,), (theta,)))
         return self
 
-    def cnot(self, control: int, target: int) -> "Circuit":
+    def cnot(self, control: int, target: int) -> Circuit:
         self.ops.append(("cnot", (control, target), ()))
         return self
 
-    def swap(self, q0: int, q1: int) -> "Circuit":
+    def swap(self, q0: int, q1: int) -> Circuit:
         self.ops.append(("swap", (q0, q1), ()))
         return self
 
-    def qft(self, qubits: Sequence[int] | None = None, inverse: bool = False) -> "Circuit":
+    def qft(self, qubits: Sequence[int] | None = None, inverse: bool = False) -> Circuit:
         q = tuple(range(self.n_qubits)) if qubits is None else tuple(qubits)
         self.ops.append(("qft", q, (1.0 if inverse else 0.0,)))
         return self

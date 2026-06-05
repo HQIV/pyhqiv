@@ -17,12 +17,11 @@ from typing import Literal
 
 from pyhqiv.auxiliary_field import phi_of_shell
 from pyhqiv.hqiv_nuclear_spectra import R_m, half_life_from_width, modes
+from pyhqiv.lean_witnesses import load_lean_witnesses
 from pyhqiv.lightcone import available_modes
 from pyhqiv.metric import gamma_hqiv
 from pyhqiv.sm_gr_unification import alpha_EM_at_MZ
 from pyhqiv.spin_statistics import hbar_MeV_s, resonance_half_life
-from pyhqiv.lean_witnesses import load_lean_witnesses
-
 
 # --- SphericalHarmonicsBridge (cumulative S² degeneracy) ---------------------------------
 

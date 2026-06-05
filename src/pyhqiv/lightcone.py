@@ -12,9 +12,8 @@ derived curvature quantities needed downstream by the preliminary present-day
 
 from __future__ import annotations
 
-from fractions import Fraction
 import math
-
+from fractions import Fraction
 
 ALPHA_EXACT = Fraction(3, 5)
 

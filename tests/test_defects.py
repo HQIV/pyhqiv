@@ -1,7 +1,6 @@
 """Tests for defects: formation_energy, charged_defect_supercell."""
 
 import numpy as np
-
 from pyhqiv.defects import charged_defect_supercell, formation_energy
 
 

@@ -16,13 +16,13 @@ Results are serializable to results.json for CI artifacts + leaderboards.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Mapping, Optional, Any
 import json
 import math
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
-from .metrics import Metric, build_default_metrics, METRIC_REGISTRY
+from .metrics import Metric, build_default_metrics
 
 
 @dataclass(frozen=True)
@@ -73,7 +73,7 @@ def _load_previous_baseline(path: Optional[str]) -> Dict[str, MetricResult]:
     if not path:
         return {}
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         prev: Dict[str, MetricResult] = {}
         for m in data.get("metrics", []):
@@ -105,7 +105,7 @@ def compute_score(
         try:
             val = float(m.compute())
             ref = float(m.reference())
-        except Exception as e:
+        except Exception:
             # On compute failure, record NaN but keep going (CI will see it)
             val = math.nan
             ref = float(m.reference()) if callable(m.reference) else 0.0

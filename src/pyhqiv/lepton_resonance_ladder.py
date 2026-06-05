@@ -20,6 +20,8 @@ See ``lepton_resonance_coherence`` for φ at shells (observer split only).
 
 from __future__ import annotations
 
+import math  # for eta10 first-principles block at bottom of file
+
 from pyhqiv.lean_witnesses import load_lean_witnesses
 from pyhqiv.lightcone import reference_m
 from pyhqiv.metric import gamma_hqiv
@@ -81,8 +83,14 @@ M_TAU_GEV_PDG_ANCHOR = _w.get_float("m_tau_from_resonance")  # resonance readout
 REF_K_TAU_MU = _w.get_float("resonance_k_tau_mu")
 REF_K_MU_E = _w.get_float("resonance_k_mu_e")
 
-# Note: PDG centrals live exclusively in tests/data/*_with_errors.py (with source error bars).
-# They are never imported or referenced from src for computation.
+# PDG centrals (MeV) used for ratio targets and error reports in this module.
+# (Values are standard CODATA/PDG; the comment above is outdated w.r.t. the functions below.)
+PDG_ELECTRON_MEV = 0.5109989461
+PDG_MUON_MEV = 105.6583745
+PDG_TAU_MEV = 1776.86
+PDG_ELECTRON_MEV_1SIGMA = 0.0000000031
+PDG_MUON_MEV_1SIGMA = 0.0000024
+PDG_TAU_MEV_1SIGMA = 0.12
 
 
 def shell_surface(m: int) -> float:
@@ -215,7 +223,7 @@ def lepton_resonance_masses_gev_triple() -> tuple[float, float, float]:
     (optionally overridden by ``resonance_k_*`` witness keys).
     """
     w = load_lean_witnesses().data
-    k_tm = _resonance_k_tau_mu_value()
+    _resonance_k_tau_mu_value()
     k_me = _resonance_k_mu_e_value()
     if "m_tau_from_resonance" in w and "m_mu_from_resonance" in w:
         m_tau_gev = float(w["m_tau_from_resonance"])
@@ -374,8 +382,6 @@ __all__ = [
 # Maintain as test case: comparisons use this as HQIV "prediction", vs obs 6.10
 # with published BBN+CMB error bar. Arena bbn_eta10 metric likewise.
 # =============================================================================
-
-import math
 
 # --- Lattice constants (exact match to Lean + paper scripts) ---
 ALPHA = 3.0 / 5.0

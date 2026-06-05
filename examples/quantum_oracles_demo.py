@@ -8,9 +8,9 @@ Run:
 from __future__ import annotations
 
 from pyhqiv import (
+    optimal_grover_iterations,
     oshoracle_grover_search,
     oshoracle_period_find_quantum,
-    optimal_grover_iterations,
 )
 
 

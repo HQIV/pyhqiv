@@ -1,7 +1,6 @@
 """Tests for HQIVSystem and HQIVAtom."""
 
 import numpy as np
-
 from pyhqiv.atom import HQIVAtom
 from pyhqiv.system import HQIVSystem
 

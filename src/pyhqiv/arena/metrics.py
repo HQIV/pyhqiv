@@ -19,8 +19,7 @@ contributions of new phase diagrams, fluid observables, lattice stats, etc.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional
-import math
+from typing import Callable, Dict, List
 
 # We import lazily inside compute fns and at registration time so that
 # importing pyhqiv.arena does not pull heavy optional deps (jax, healpy, ...).
@@ -77,20 +76,19 @@ def _witness_float(key: str, default: float) -> float:
 
 
 def _py_ref_m() -> float:
-    from pyhqiv.lightcone import reference_m
 
     return float(reference_m())
 
 
 def _py_omega_k_self() -> float:
-    from pyhqiv.lightcone import omega_k_at_horizon, reference_m
+    from pyhqiv.lightcone import omega_k_at_horizon
 
     m = int(reference_m())
     return float(omega_k_at_horizon(m, m))
 
 
 def _py_omega_k_partial_ref() -> float:
-    from pyhqiv.lightcone import omega_k_partial, reference_m
+    from pyhqiv.lightcone import omega_k_partial
 
     return float(omega_k_partial(int(reference_m())))
 
@@ -104,15 +102,12 @@ def _omega_k_now_slice() -> float:
     agree roughly with observations (Planck central ~0.001, |Ω_k| < ~0.02 bound).
     Not the horizon-self value of exactly 1 (which is a theorem at the full horizon or self-reference).
     """
-    from pyhqiv.now_setters import m_now
-    from pyhqiv.lightcone import reference_m
     # The now value is the model prediction for the curvature density parameter at current age.
     # It is derived from the lattice integral at m_now (dynamic with age).
     # Use the paper-calibrated value for the current m_now (from witnesses m_now_electron_shell).
     # In full dynamic form it would be e.g. omega_k_at_horizon(m_now, N_total_horizon) scaled
     # by the amplitude at the reference, yielding the small observed-like number.
     # For current witnesses, this is the fixed paper value consistent with the now choice.
-    m = m_now
     # Return the standard now-slice value (small, age-dependent in the paradigm via m_now choice)
     # Hardcoded to paper value; when m_now or lattice changes in future, this would be recomputed.
     return 0.0098
@@ -125,7 +120,7 @@ def _py_curvature_norm() -> float:
 
 
 def _py_lapse_ref() -> float:
-    from pyhqiv.metric import hqvm_lapse, gamma_hqiv
+    from pyhqiv.metric import gamma_hqiv, hqvm_lapse
 
     # Canonical exercise point using gamma (no magic literal); t=1 natural.
     g = gamma_hqiv()
@@ -133,7 +128,7 @@ def _py_lapse_ref() -> float:
 
 
 def _py_available_modes_ref() -> float:
-    from pyhqiv.lightcone import available_modes, reference_m
+    from pyhqiv.lightcone import available_modes
 
     return float(available_modes(int(reference_m())))
 
@@ -221,9 +216,10 @@ register_metric(
 )
 
 # Vacuum energy / CC problem: mainstream worst case vs HQIV finite modes (paper script match)
-from pyhqiv.quantum_optics.horizon_qed import vacuum_zero_point_natural
-from pyhqiv.now_setters import m_now
 from pyhqiv.lightcone import reference_m
+from pyhqiv.now_setters import m_now
+from pyhqiv.quantum_optics.horizon_qed import vacuum_zero_point_natural
+
 
 def _vacuum_energy_discrepancy() -> float:
     """
@@ -232,7 +228,7 @@ def _vacuum_energy_discrepancy() -> float:
     """
     # Use cap around current now or ref; paper uses m_uv=0, m_ir ~ current causal
     cap = max(10, int(m_now) + 5)  # or reference_m for lockin
-    u_hqiv_nat = vacuum_zero_point_natural(0, cap)
+    vacuum_zero_point_natural(0, cap)
     # In model, this u_nat corresponds to observed after conversion; discrepancy 0 for HQIV
     # (the point is no 120-digit tuning needed)
     return 0.0  # matches obs; the "error" is zero tuning
@@ -450,8 +446,8 @@ def build_default_metrics() -> List[Metric]:
 def _proton_electron_mass_ratio() -> float:
     """m_p / m_e derived from Lean nucleon + electron resonance ladder at electron horizon lock-in."""
     try:
-        from pyhqiv.scale_witness import derived_proton_mass_MeV
         from pyhqiv.lean_witnesses import load_lean_witnesses
+        from pyhqiv.scale_witness import derived_proton_mass_MeV
         mp = derived_proton_mass_MeV()
         w = load_lean_witnesses().data
         me = float(w.get("m_electron_MeV", 0.51099895))
@@ -475,7 +471,11 @@ register_metric(
 def _deuteron_binding_z() -> float:
     """Statistical z-score for deuteron binding using the isotope ladder (paper network path) vs AME2020 with published σ."""
     try:
-        from pyhqiv.isotope_ladder import IsotopeLadderConfig, IsotopeState, nuclear_binding_energy_mev
+        from pyhqiv.isotope_ladder import (
+            IsotopeLadderConfig,
+            IsotopeState,
+            nuclear_binding_energy_mev,
+        )
         from pyhqiv.lean_witnesses import load_lean_witnesses
         w = load_lean_witnesses().data
         mp = float(w.get("derivedProtonMass_MeV", 938.2720813))
@@ -512,9 +512,9 @@ def _neutron_half_life_ratio() -> float:
     Uses scaffold directly to avoid signature issues; falls back to known benchmark ratio (~1.0016, already excellent).
     """
     try:
-        from pyhqiv.lean_witnesses import load_lean_witnesses
         from pyhqiv.hqiv_nuclear_spectra import beta_decay_rate_with_gf
         from pyhqiv.isotope_ladder import half_life_from_width
+        from pyhqiv.lean_witnesses import load_lean_witnesses
         w = load_lean_witnesses().data
         g_fermi = 1.1663787e-5  # GeV^-2 in natural; scaled for MeV
         m_e = float(w.get("m_electron_MeV", 0.51099895))
@@ -568,8 +568,16 @@ def _paper_max_abs_z_real() -> float:
     """Max |z| over the programme paper comparisons (binding, masses, half-lives, CMB, etc.) with published error bars."""
     try:
         # Import the master list indirectly by running key getters from the test data
-        from pyhqiv.isotope_ladder import IsotopeLadderConfig, IsotopeState, nuclear_binding_energy_mev
-        from tests.data.nuclear_binding_reference import lookup_binding, CODATA_2018_PROTON_MEV, CODATA_2018_NEUTRON_MEV
+        from pyhqiv.isotope_ladder import (
+            IsotopeLadderConfig,
+            IsotopeState,
+            nuclear_binding_energy_mev,
+        )
+        from tests.data.nuclear_binding_reference import (
+            CODATA_2018_NEUTRON_MEV,
+            CODATA_2018_PROTON_MEV,
+            lookup_binding,
+        )
         zs = []
         cfg = IsotopeLadderConfig(shell_m=4, m_proton_mev=CODATA_2018_PROTON_MEV, m_neutron_mev=CODATA_2018_NEUTRON_MEV, rotational_scale_mev=0.0)
         for z, n in [(1,1), (2,2)]:  # deuteron, alpha etc.
