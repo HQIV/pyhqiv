@@ -22,3 +22,8 @@ htmlcov/
 .cursor/
 .DS_Store
 *.swp
+
+# Web / WASM site build artifacts (wheels are injected at deploy time only)
+web/wheels/
+_site/
+site/

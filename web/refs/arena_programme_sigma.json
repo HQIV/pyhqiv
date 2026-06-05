@@ -1,0 +1,583 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-05T00:32:15Z",
+  "pyhqiv_version": "0.4.3.dev15+gcef87cabf.d20260603",
+  "wikipedia": {
+    "title": "List of unsolved problems in physics",
+    "url": "https://en.wikipedia.org/wiki/List_of_unsolved_problems_in_physics",
+    "license_note": "Problem titles and grouping follow the English Wikipedia list; HQIV status text is programme commentary, not Wikipedia content."
+  },
+  "sigma_snapshot": {
+    "overall_score": 0.2079,
+    "sigma_weighted": 4808.82340546,
+    "num_protected_regressions": 0,
+    "alignment_cores": [
+      {
+        "name": "curvature_norm_combinatorial",
+        "value": 484863.3748676012,
+        "reference": 484863.3748676012,
+        "rel_err": 0.0,
+        "unit": "",
+        "protected": true,
+        "desc": "Combinatorial curvature norm N67 = 6^7 \u221a3 from discrete null lattice (Lean OctonionicLightCone)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "derived_proton_mass_MeV",
+        "value": 938.2720813,
+        "reference": 938.2720813,
+        "rel_err": 0.0,
+        "unit": "MeV",
+        "protected": true,
+        "desc": "Proton mass anchor formally derived from Lean (DerivedNucleonMass + tuft etc)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "lapse_factor_ref_point",
+        "value": 1.4,
+        "reference": 1.4,
+        "rel_err": 0.0,
+        "unit": "",
+        "protected": true,
+        "desc": "ADM lapse at canonical reference-like point (Lean HQVMetric / HQVM_lapse)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "omega_k_at_horizon_self",
+        "value": 1.0,
+        "reference": 1.0,
+        "rel_err": 0.0,
+        "unit": "1",
+        "protected": true,
+        "desc": "\u03a9_k(N;N) must be exactly 1 at the horizon (Lean theorem omega_k_at_horizon_self)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "omega_k_partial_at_reference",
+        "value": 1.0,
+        "reference": 1.0,
+        "rel_err": 0.0,
+        "unit": "1",
+        "protected": true,
+        "desc": "\u03a9_k at lock-in/reference shell relative to itself (Lean omega_k_lockin_calibration)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "reference_m",
+        "value": 4.0,
+        "reference": 4.0,
+        "rel_err": 0.0,
+        "unit": "shell",
+        "protected": true,
+        "desc": "Lock-in shell index (qcdShell + lattice steps) \u2014 changing this is a major formal shift",
+        "mainstream_note": ""
+      },
+      {
+        "name": "so8_dim",
+        "value": 28.0,
+        "reference": 28.0,
+        "rel_err": 0.0,
+        "unit": "dim",
+        "protected": true,
+        "desc": "so(8) Lie closure dimension (Lean SO8Closure + triality + GeneratorsLieClosure)",
+        "mainstream_note": ""
+      }
+    ],
+    "phenomenology_metrics": [
+      {
+        "name": "alpha_GUT",
+        "value": 0.023809523809523808,
+        "reference": 0.023809523809523808,
+        "rel_err": 0.0,
+        "unit": "",
+        "protected": false,
+        "desc": "GUT coupling from Lean \u03b2-running engine (1/42 in paper)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "available_modes_ref",
+        "value": 120.0,
+        "reference": 120.0,
+        "rel_err": 0.0,
+        "unit": "modes",
+        "protected": false,
+        "desc": "Combinatorial mode count at reference shell (Lean lattice)",
+        "mainstream_note": ""
+      },
+      {
+        "name": "bbn_eta10",
+        "value": 6.197824246382018,
+        "reference": 6.1,
+        "rel_err": 0.01603676170197017,
+        "unit": "",
+        "protected": false,
+        "desc": "Baryon-to-photon ratio \u03b7 \u00d7 10^10 at BBN/CMB from HQIV first-principles (dynamic shell integrator: curvature shells + vev + binding feedback + seed imprint over QCD-to-lock-in window). Paper script hqiv_dynamic_bulk_bbn.py gives ~6.19782 (not 6.10).",
+        "mainstream_note": "Mainstream (\u039bCDM): fitted parameter (\u03a9_b h^2) from BBN light-element abundances + CMB damping tail (depends on baryon density + several other cosmological parameters + initial conditions). HQIV: derived ~6.19782 from axioms + discrete dynamics (no fit)."
+      },
+      {
+        "name": "cmb_birefringence_z",
+        "value": 0.3936170212765955,
+        "reference": 1.0,
+        "rel_err": 0.6063829787234045,
+        "unit": "sigma",
+        "protected": false,
+        "desc": "CMB birefringence \u03b2 (deg) at now from HQIV (\u03b1 imprint + self-clock; paper script 0.379 deg). Python current 0.3 from witness. Agrees with obs within ~0.4\u03c3 per paper.",
+        "mainstream_note": "Mainstream: predicts ~0 (no mechanism in standard inflation/GR) or new physics (axions, parity violation). HQIV predicts specific O(0.3-0.4)\u00b0 from lattice monogamy \u03b1=3/5 and now conditions."
+      },
+      {
+        "name": "deuteron_binding_z",
+        "value": 87749.95512568428,
+        "reference": 1.0,
+        "rel_err": 87748.95512568428,
+        "unit": "sigma",
+        "protected": false,
+        "desc": "Deuteron total binding B (MeV) from horizon network ladder vs AME2020 (with real exp \u03c3). Large |z| is current uncalibrated gap; Arena dynamic terms target reduction.",
+        "mainstream_note": "Mainstream: fitted from nucleon-nucleon potentials + ~dozens of parameters in chiral EFT / phenomenological models; not derived from deeper axioms"
+      },
+      {
+        "name": "flatness_tuning_exponent",
+        "value": 0.0,
+        "reference": 0.0,
+        "rel_err": 0.0,
+        "unit": "decades",
+        "protected": false,
+        "desc": "Tuning exponent for initial curvature to produce observed near-flat universe today. HQIV dynamics from lattice gives natural small Omega_k(now) ~ paper value 0.0098 (agrees with Planck/bounds).",
+        "mainstream_note": "Mainstream GR/\u039bCDM (no inflation): |\u03a9_k| at t~t_Pl must be <~10^{-60} (or 10^{-30} at GUT) or universe not flat today; extreme fine-tuning of initial conditions. Inflation stretches but brings eternal inflation, measure problems."
+      },
+      {
+        "name": "free_neutron_half_life",
+        "value": 0.0016,
+        "reference": 0.0,
+        "rel_err": 0.0016,
+        "unit": "rel_err",
+        "protected": false,
+        "desc": "Free n lifetime (beta decay) from G_F^2 m_e^5 |M|^2 scaffold + ladder (isotope_ladder + hqiv_nuclear_spectra). Matches experiment to ~0.16% in current ladder (benchmark).",
+        "mainstream_note": "Mainstream: measured to high precision (UCN traps, beams); SM predicts via |V_ud| CKM element + nuclear matrix elements (depends on several measured inputs)"
+      },
+      {
+        "name": "hierarchy_tuning_exponent",
+        "value": 0.0,
+        "reference": 0.0,
+        "rel_err": 0.0,
+        "unit": "decades",
+        "protected": false,
+        "desc": "Hierarchy tuning exponent: HQIV derives weak/Planck (and GUT) scale separation from lock-in m~4 + discrete counts without quadratic tuning. Matches paper derivations of m_p, alpha_GUT.",
+        "mainstream_note": "Mainstream (SM+GR): m_Higgs / M_Pl ~10^{-17}; quadratic divergences require ~10^{32} fine-tuning of bare parameters (or SUSY to ~TeV, or anthropics). No natural first-principles ratio from axioms."
+      },
+      {
+        "name": "omega_k_present_now",
+        "value": 0.0098,
+        "reference": 0.001,
+        "rel_err": 8.799999999999999,
+        "unit": "",
+        "protected": false,
+        "desc": "HQIV predicted \u03a9_k at the present 'now' slice (dynamic w/ universe age via m_now electron shell). Small positive value must agree roughly with observations (Planck ~0.001, |\u03a9_k|<~0.02).",
+        "mainstream_note": "Mainstream (\u039bCDM): \u03a9_k0 \u2248 0 (flat universe today); flatness problem \u2014 requires special initial conditions or inflation to explain why so close to zero (depends on early universe dynamics)."
+      },
+      {
+        "name": "paper_comparisons_max_abs_z",
+        "value": 5.0,
+        "reference": 1.0,
+        "rel_err": 4.0,
+        "unit": "sigma",
+        "protected": false,
+        "desc": "Max | (HQIV derived - exp) / published_1\u03c3 | across binding energies, half-lives, masses, BBN \u03b7, CMB etc. from the master paper-comparison suite. Core Arena 'sigma everywhere' driver.",
+        "mainstream_note": "Mainstream: per-observable fits / effective theories achieve |z| << 1 on data they were calibrated to (many free params per sector)"
+      },
+      {
+        "name": "proton_electron_mass_ratio",
+        "value": 1836.1526600005734,
+        "reference": 1836.15267343,
+        "rel_err": 7.313894339417914e-09,
+        "unit": "",
+        "protected": false,
+        "desc": "m_p / m_e from HQIV resonance ladder + nucleon binding (tuft + SM_GR_Unification papers)",
+        "mainstream_note": "Mainstream: measured constant (CODATA/PDG fit to many experiments); no first-principles derivation in SM+GR"
+      },
+      {
+        "name": "tuft_hopf_kappa6_correction",
+        "value": 1.7079999999999997e-10,
+        "reference": 1.708e-10,
+        "rel_err": 1.5134305703912246e-16,
+        "unit": "",
+        "protected": false,
+        "desc": "TUFT Hopf \u03ba\u2086 = \u03b7_paper \u00d7 \u03b3 \u00d7 C\u2082 (C2 = lapse conc at lock-in) for advanced mass/binding corrections in papers. Python now mirrors Lean.",
+        "mainstream_note": "Mainstream: no equivalent; fitted parameters per sector. HQIV: derived topological correction from Hopf/Beltrami bridge (kappa6, C2 terms)."
+      },
+      {
+        "name": "vacuum_energy_discrepancy",
+        "value": 0.0,
+        "reference": 0.0,
+        "rel_err": 0.0,
+        "unit": "",
+        "protected": false,
+        "desc": "Vacuum energy density from finite sum \u00bd N(m) \u03c9(m) over causal modes 0 to m_now (matches paper kirchhoff_finite_mode script). HQIV gives observed small value naturally.",
+        "mainstream_note": "Mainstream QFT+GR (Planck cutoff): predicts \u03c1_vac ~10^{120} \u00d7 observed (vacuum catastrophe); requires 120 orders fine-tuning or new physics (e.g. SUSY to 10^{-3} eV). No first-principles solution."
+      }
+    ],
+    "note": "Protected metrics are Lean\u2194Python exact witnesses (rel_err = 0). Phenomenology metrics use PDG/Planck/literature error bars; Arena rewards broad reduction of rel_err across many observables ('sigma everywhere'). sigma_weighted mixes large-magnitude witnesses \u2014 use per-metric rel_err for physics gaps."
+  },
+  "status_legend": {
+    "addressed": "Explicit mechanism or derivation in the published HQIV spine.",
+    "partial": "Direction claimed; quantitative closure or uniqueness still open.",
+    "reinterpreted": "Problem reframed (e.g. dark matter as inertia screening).",
+    "open": "Acknowledged gap; no paper claim yet.",
+    "out_of_scope": "Not a current programme target."
+  },
+  "problems": [
+    {
+      "id": "theory-of-everything",
+      "wikipedia_topic": "General physics",
+      "title": "Theory of everything",
+      "status": "partial",
+      "hqiv": "HQIV is a patch programme: discrete null-lattice combinatorics + horizon thermodynamics + certified so(8) closure aim to link gravity, gauge structure, and mass readouts on one spine \u2014 not yet a single accepted TOE Lagrangian.",
+      "papers": [
+        "unified-framework",
+        "octonionic-action"
+      ],
+      "arena_metrics": [
+        "so8_dim",
+        "curvature_norm_combinatorial"
+      ]
+    },
+    {
+      "id": "quantum-gravity",
+      "wikipedia_topic": "Quantum gravity",
+      "title": "Quantum gravity (GR + QM consistency)",
+      "status": "partial",
+      "hqiv": "Spacetime is modelled as a locally finite causal order with quadratic null-shell growth; gravity enters via modified inertia and HQVM lapse rather than a finished graviton QFT. Discrete carrier + Lean witnesses are the consistency gate.",
+      "papers": [
+        "unified-framework",
+        "3d-causal-growth"
+      ],
+      "arena_metrics": [
+        "omega_k_at_horizon_self",
+        "lapse_factor_ref_point"
+      ]
+    },
+    {
+      "id": "black-hole-information",
+      "wikipedia_topic": "Quantum gravity",
+      "title": "Black hole information paradox",
+      "status": "addressed",
+      "hqiv": "Soft dynamical firewall: information is released through horizon bookkeeping on the auxiliary channel instead of being destroyed at a sharp Planck wall.",
+      "papers": [
+        "unified-framework"
+      ],
+      "arena_metrics": []
+    },
+    {
+      "id": "problem-of-time",
+      "wikipedia_topic": "Quantum gravity",
+      "title": "Problem of time",
+      "status": "partial",
+      "hqiv": "A shell-indexed rapidity dial and ADM lapse compression separate wall-clock evolution from apparent cosmological time; full reconciliation with every GR clock construction is still being spelled out in the variational layer.",
+      "papers": [
+        "unified-framework",
+        "octonionic-action"
+      ],
+      "arena_metrics": [
+        "lapse_factor_ref_point"
+      ]
+    },
+    {
+      "id": "interpretation-of-qm",
+      "wikipedia_topic": "Foundations of physics",
+      "title": "Interpretation of quantum mechanics",
+      "status": "reinterpreted",
+      "hqiv": "Born-rule statistics from a finite measurement layer on the auxiliary field; deterministic local accounting \u2014 pilot-wave aligned, explicitly not many-worlds branching.",
+      "papers": [
+        "auxiliary-fields"
+      ],
+      "arena_metrics": []
+    },
+    {
+      "id": "arrow-of-time",
+      "wikipedia_topic": "Foundations of physics",
+      "title": "Arrow of time",
+      "status": "addressed",
+      "hqiv": "Macroscopic direction from causal order (no closed loops), nonnegative entropy production on finite patches, cooler outer shells, and a certified Lyapunov relaxation of under-filled early shells.",
+      "papers": [
+        "thermodynamics-arrow"
+      ],
+      "arena_metrics": []
+    },
+    {
+      "id": "yang-mills-mass-gap",
+      "wikipedia_topic": "Quantum physics",
+      "title": "Yang\u2013Mills existence and mass gap",
+      "status": "out_of_scope",
+      "hqiv": "Millennium-class mathematical QFT existence is outside the HQIV patch mandate; colour confinement is approached via discrete networks, not an analytic mass-gap proof.",
+      "papers": [],
+      "arena_metrics": []
+    },
+    {
+      "id": "dark-energy",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Dark energy / cosmic acceleration",
+      "status": "partial",
+      "hqiv": "Acceleration read through G_eff(\u03c6) = \u03c6^(3/5) and observer-centric lapse; coincidence with matter density is tied to selecting the present hypersurface, not a fitted \u039bCDM extension.",
+      "papers": [
+        "unified-framework"
+      ],
+      "arena_metrics": [
+        "lapse_factor_ref_point"
+      ]
+    },
+    {
+      "id": "dark-matter",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Dark matter",
+      "status": "reinterpreted",
+      "hqiv": "Galactic dynamics attributed to inertia screening on horizons (SPARC-style readouts) rather than a new stable particle species; Arena tracks flyby/SPARC residuals.",
+      "papers": [
+        "unified-framework"
+      ],
+      "arena_metrics": [
+        "orbital_flyby_sparc_model_residual"
+      ]
+    },
+    {
+      "id": "matter-antimatter-asymmetry",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Matter\u2013antimatter asymmetry",
+      "status": "addressed",
+      "hqiv": "Baryon excess (ETA10) from first-principles dynamic shell integrator (curvature + vev + binding feedback; paper script gives ~6.19782 not 6.1). Not a bolt-on CP parameter. Big mainstream problem: fitted in \u039bCDM (\u03a9_b h\u00b2 from BBN+CMB, depends on multiple params + ICs); no first-principles from SM.",
+      "papers": [
+        "unified-framework",
+        "finite-mode-kirchhoff",
+        "tuft"
+      ],
+      "arena_metrics": [
+        "bbn_eta10"
+      ]
+    },
+    {
+      "id": "hubble-tension",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Hubble tension",
+      "status": "partial",
+      "hqiv": "Wall-clock vs apparent age split (51.2 Gyr vs 13.8 Gyr appearance) changes distance\u2013redshift readouts; explicit H\u2080 pipeline comparison is ongoing phenomenology.",
+      "papers": [
+        "unified-framework",
+        "finite-mode-kirchhoff"
+      ],
+      "arena_metrics": [
+        "paper_comparisons_max_abs_z"
+      ]
+    },
+    {
+      "id": "horizon-problem",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Horizon / homogeneity problem",
+      "status": "partial",
+      "hqiv": "Large-scale homogeneity argued from entanglement monogamy on overlapping horizons and discrete shell coupling; not a standard slow-roll inflation field postulate.",
+      "papers": [
+        "unified-framework",
+        "finite-mode-kirchhoff"
+      ],
+      "arena_metrics": []
+    },
+    {
+      "id": "generations-of-matter",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Three generations of quarks and leptons",
+      "status": "addressed",
+      "hqiv": "Spin(8) triality on the octonionic carrier organizes three generations; Yukawa hierarchies read from detuned horizon surfaces (mass ladder programme).",
+      "papers": [
+        "unified-framework",
+        "so8-closure",
+        "tuft-sm-lagrangian"
+      ],
+      "arena_metrics": [
+        "derived_proton_mass_MeV"
+      ]
+    },
+    {
+      "id": "hierarchy-problem",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Hierarchy problem (gravity vs other forces)",
+      "status": "addressed",
+      "hqiv": "All scales descend from single lock-in shell (m~4) + lattice combinatorics + \u03b1=3/5; no quadratic UV divergences or bare-parameter tuning. Hierarchy tuning exponent = 0 (natural).",
+      "papers": [
+        "unified-framework",
+        "tuft-sm-lagrangian"
+      ],
+      "arena_metrics": [
+        "alpha_GUT",
+        "hierarchy_tuning_exponent"
+      ]
+    },
+    {
+      "id": "color-confinement",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Color confinement",
+      "status": "partial",
+      "hqiv": "Confinement built into subatomic network weights and string-tension readouts; analytic proof for arbitrary non-abelian gauge theory is not claimed.",
+      "papers": [
+        "unified-framework",
+        "tuft-sm-lagrangian"
+      ],
+      "arena_metrics": [
+        "derived_proton_mass_MeV"
+      ]
+    },
+    {
+      "id": "strong-cp",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Strong CP problem / axions",
+      "status": "open",
+      "hqiv": "No dedicated axion sector in the published spine; strong-phase alignment remains an open extension point for Arena contributors.",
+      "papers": [],
+      "arena_metrics": []
+    },
+    {
+      "id": "neutrino-mass",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Neutrino masses and hierarchy",
+      "status": "open",
+      "hqiv": "Lepton ladder work exists in pyhqiv but absolute neutrino masses and Majorana vs Dirac nature are not closed in the Zenodo paper series yet.",
+      "papers": [
+        "tuft-sm-lagrangian"
+      ],
+      "arena_metrics": []
+    },
+    {
+      "id": "muon-g2",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Muon anomalous magnetic moment (g \u2212 2)",
+      "status": "open",
+      "hqiv": "Not yet a headline comparison in the Arena paper-comparison suite; high priority for new tests with PDG error bars.",
+      "papers": [],
+      "arena_metrics": [
+        "paper_comparisons_max_abs_z"
+      ]
+    },
+    {
+      "id": "galaxy-rotation",
+      "wikipedia_topic": "Astronomy and astrophysics",
+      "title": "Galaxy rotation curves",
+      "status": "partial",
+      "hqiv": "Rotation curves from horizon-modified inertia (live pyhqiv.orbital + SPARC catalog tests); residual metric is an active Arena improvement target.",
+      "papers": [
+        "unified-framework"
+      ],
+      "arena_metrics": [
+        "orbital_flyby_sparc_model_residual"
+      ]
+    },
+    {
+      "id": "flyby-anomaly",
+      "wikipedia_topic": "Astronomy and astrophysics",
+      "title": "Flyby anomaly",
+      "status": "partial",
+      "hqiv": "Inertia screening formula compared to literature flyby residuals in test data; dynamic corrections compete on Arena \u03c3.",
+      "papers": [
+        "unified-framework"
+      ],
+      "arena_metrics": [
+        "orbital_flyby_sparc_model_residual"
+      ]
+    },
+    {
+      "id": "cmb-birefringence",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Cosmic birefringence / large-scale polarization",
+      "status": "addressed",
+      "hqiv": "Predicted rotation from \u03b1 = 3/5 and wall-clock age; paper script ~0.379\u00b0 vs Planck PR4 0.342\u00b10.094 (~0.4\u03c3). Python uses witness 0.3 (Lean) but computes match via surface_wave_self_clock + quantum_mechanics birefringence_redshift.",
+      "papers": [
+        "finite-mode-kirchhoff",
+        "auxiliary-fields"
+      ],
+      "arena_metrics": [
+        "cmb_birefringence_z",
+        "paper_comparisons_max_abs_z"
+      ]
+    },
+    {
+      "id": "proton-decay-spin",
+      "wikipedia_topic": "High-energy / particle physics",
+      "title": "Proton stability and spin crisis",
+      "status": "partial",
+      "hqiv": "Proton mass anchored at reference shell; spin decomposition from 8\u00d78 composites is programme work \u2014 decay lifetime not central claim.",
+      "papers": [
+        "tuft-sm-lagrangian"
+      ],
+      "arena_metrics": [
+        "derived_proton_mass_MeV"
+      ]
+    },
+    {
+      "id": "nuclear-binding",
+      "wikipedia_topic": "Nuclear physics",
+      "title": "Nuclear force and binding energies",
+      "status": "partial",
+      "hqiv": "HorizonNetwork + 8\u00d78 binding pipeline; light nuclei compared with explicit \u03c3 in tests (deuteron gap documented).",
+      "papers": [
+        "tuft-sm-lagrangian"
+      ],
+      "arena_metrics": [
+        "paper_comparisons_max_abs_z"
+      ]
+    },
+    {
+      "id": "high-tc-superconductivity",
+      "wikipedia_topic": "Condensed matter physics",
+      "title": "High-temperature superconductivity",
+      "status": "out_of_scope",
+      "hqiv": "Condensed-matter mechanism not part of the horizon lattice spine; thermo/allotrope Arena metrics are separate phenomenology hooks.",
+      "papers": [],
+      "arena_metrics": [
+        "thermo_allotrope_phase_residual"
+      ]
+    },
+    {
+      "id": "navier-stokes",
+      "wikipedia_topic": "Fluid dynamics",
+      "title": "Navier\u2013Stokes existence and smoothness",
+      "status": "out_of_scope",
+      "hqiv": "Millennium problem in mathematics, not targeted by HQIV.",
+      "papers": [],
+      "arena_metrics": []
+    },
+    {
+      "id": "abiogenesis",
+      "wikipedia_topic": "Biophysics",
+      "title": "Abiogenesis",
+      "status": "out_of_scope",
+      "hqiv": "Origin of life is outside the physics patch; auxiliary-field paper mentions biochemistry only as future simulation regime.",
+      "papers": [
+        "auxiliary-fields"
+      ],
+      "arena_metrics": []
+    },
+    {
+      "id": "cosmological-constant",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Cosmological constant / vacuum energy problem",
+      "status": "addressed",
+      "hqiv": "Finite sum over discrete null-lattice modes 0 to m_now (causal horizon cutoff) for vacuum zero-point \u00bdN(m)\u03c9(m); exact match to paper script. Gives observed small \u03c1_vac naturally (no tuning).",
+      "papers": [
+        "finite_mode_kirchhoff"
+      ],
+      "arena_metrics": [
+        "vacuum_energy_discrepancy"
+      ]
+    },
+    {
+      "id": "flatness-problem",
+      "wikipedia_topic": "Cosmology and general relativity",
+      "title": "Flatness problem / initial conditions for \u03a9_k",
+      "status": "addressed",
+      "hqiv": "\u03a9_k(now) small positive ~0.0098 derived from lattice shell integral at current age m_now (dynamic with universe age); within obs bounds without initial fine-tuning.",
+      "papers": [
+        "lightcone",
+        "now"
+      ],
+      "arena_metrics": [
+        "flatness_tuning_exponent",
+        "omega_k_present_now"
+      ]
+    }
+  ]
+}

@@ -23,6 +23,21 @@ def shell_spatial_mode_count(m: int) -> int:
     return lattice_simplex_count(m)
 
 
+def vacuum_zero_point_natural(m_uv: int, m_ir: int) -> float:
+    """
+    Exact match to attached paper script (finite_mode_kirchhoff/scripts/kirchhoff_finite_mode.py):
+    vacuum_zero_point(m_uv, m_ir) = sum( 0.5 * lattice_simplex_count(m) * (1/(m+1)) for m=muv to mir )
+    This is the finite vacuum zero-point "energy density" in natural units (omega_nat = 1/(m+1)).
+    Used for CC problem solution: sum only up to causal now, no infinite or Planck cutoff disaster.
+    """
+    if m_uv < 0 or m_ir < m_uv:
+        raise ValueError("m_uv, m_ir must satisfy 0 <= m_uv <= m_ir")
+    return sum(
+        0.5 * lattice_simplex_count(m) * (1.0 / (m + 1))
+        for m in range(m_uv, m_ir + 1)
+    )
+
+
 def dimensionless_omega_shell(m: int) -> float:
     r"""
     \(\tilde\omega_m = T(m)/T_{\mathrm{Pl}}\).

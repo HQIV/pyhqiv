@@ -38,5 +38,6 @@ __all__ = [
     "sigma_plus",
     "sigma_z",
     "truncated_vacuum_zero_point_si",
+    "vacuum_zero_point_natural",
     "zero_point_energy_shell_si",
 ]

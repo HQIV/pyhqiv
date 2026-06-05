@@ -199,6 +199,31 @@ from pyhqiv.orbital import hqiv_galaxy_rotation_point, hqiv_flyby_inertia_screen
 
 See `examples/` (many still reference older surface; the clean ones are in tests + the paper repro scripts).
 
+## Web / WASM Calculator
+
+A live calculator that runs the **exact same package** (identical inputs → identical outputs, including σ comparisons) entirely in the browser via Pyodide + WebAssembly.
+
+- Live at: https://disregardfiat.github.io/pyhqiv/ (after first `main` push + Pages enabled)
+- Built **only on pushes to `main`** (see `.github/workflows/web.yml`). Never on PRs.
+- Features:
+  - Pure geometry + Lean witness constants
+  - Nucleus binding energies + masses via the isotope ladder (same code as `isotope_ladder`)
+  - z-score / σ display against the AME2020 references used in `tests/test_binding_energy_vs_pdg.py`
+  - Thermo free energy, φ, lapse etc. (same `compute_free_energy`)
+  - Full Python REPL for any public API
+  - Optional charts (Chart.js) comparing predictions vs experiment
+
+**Local test of the web UI:**
+```bash
+python -m build
+mkdir -p web/wheels
+cp dist/pyhqiv-*-py3-none-any.whl web/wheels/
+python -m http.server -d web 8080
+```
+Open http://localhost:8080. The JS auto-detects the wheel.
+
+See `web/README.md` and `web/main.js` for how the bridge works (very thin — most logic stays in the real `src/pyhqiv/` modules).
+
 ## Package Layout (current clean rebuild)
 
 | Path | Description |

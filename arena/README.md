@@ -16,6 +16,18 @@ The actual implementation lives in:
 
 See the top-level `CONTRIBUTING.md` for the full workflow, gates, and "sigma everywhere" philosophy.
 
+## Programme σ map (open problems)
+
+`arena/programme_sigma.json` maps a curated subset of the
+[Wikipedia list of unsolved problems in physics](https://en.wikipedia.org/wiki/List_of_unsolved_problems_in_physics)
+to HQIV programme status and the current Arena metric snapshot. Regenerate after metric changes:
+
+```bash
+PYTHONPATH=src python scripts/export_programme_sigma.py
+```
+
+The disregardfiat.tech site loads this file at `#mysteries` (bundled under `public/arena/`).
+
 The live leaderboard is also rendered at https://disregardfiat.tech/#arena (pulls the JSON from this repo's main branch).
 
 ## CLI

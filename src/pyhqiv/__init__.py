@@ -348,6 +348,9 @@ from pyhqiv.quantum_oracles import (
     period_probability_distribution,
     period_support,
 )
+
+# vacuum zero point matching paper script for CC solution (finite modes vs QFT disaster)
+from pyhqiv.quantum_optics.horizon_qed import vacuum_zero_point_natural
 from pyhqiv.benchmark_osh_vs_dense import (
     BenchCase as ProteinOshBenchCase,
     format_table_row as protein_osh_benchmark_format_row,
@@ -632,9 +635,34 @@ __all__ = [
     "protein_osh_benchmark_paper_cases",
     "protein_osh_benchmark_run_case",
     "protein_osh_benchmark_run_paper_table",
+    # TUFT/Hopf kappa6 and C2 (second-order) for paper "D" (deuteron/mass) corrections ~0.12% level, matching current Lean
+    "tuft_hopf_kappa6",
+    "tuft_hopf_kappa6_second_order_correction",
+    # Cosmic birefringence / self-clock at now (CMB polarization rotation, wall-clock age)
+    "cosmic_birefringence_deg_at_now",
+    "cosmic_birefringence_rad_at_now",
+    "self_clock_cumulative_rapidity_cosmic_now",
+    # First-principles baryon asymmetry / eta10 (dynamic shell integrator; paper script match, not the observed 6.1)
+    "eta10_from_dynamic_first_principles",
+    "derived_omega_b_at_lockin",
 ]
 
 try:
     from pyhqiv._version import version as __version__
 except ImportError:
     __version__ = "0.0.0+unknown"
+
+# Re-export for top-level access (captures Lean for calculator / Arena)
+from pyhqiv.lepton_resonance_ladder import (
+    tuft_hopf_kappa6,
+    tuft_hopf_kappa6_second_order_correction,
+    eta10_from_dynamic_first_principles,
+    derived_omega_b_at_lockin,
+)
+
+# Surface self-clock (wall-clock age, cosmic birefringence / polarization rotation at now)
+from pyhqiv.surface_wave_self_clock import (
+    cosmic_birefringence_deg_at_now,
+    cosmic_birefringence_rad_at_now,
+    self_clock_cumulative_rapidity_cosmic_now,
+)
