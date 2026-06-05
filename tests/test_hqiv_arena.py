@@ -13,6 +13,8 @@ def test_arena_metrics_registry_and_order():
     names = [m.name for m in mets]
     assert any("so8" in n for n in names)
     assert any("omega_k" in n for n in names)
+    # hep decay sigma pulled into arena
+    assert any("hep_decay" in n for n in names)
     # protected should sort first
     prot = [m for m in mets if m.protected]
     assert len(prot) >= 5

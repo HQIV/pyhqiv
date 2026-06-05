@@ -680,3 +680,13 @@ from pyhqiv.surface_wave_self_clock import (
     cosmic_birefringence_rad_at_now,
     self_clock_cumulative_rapidity_cosmic_now,
 )
+
+# HEP decay readout + σ (pulled into calculator; Lean HepDecayReadout mirror + arena metrics)
+from pyhqiv import (
+    hep_decay_benchmark,
+    hep_decay_chain,
+    hep_decay_multichannel_expansion,
+    hep_decay_production_readout,
+    hep_decay_readout,
+    hep_decay_sigma,
+)
