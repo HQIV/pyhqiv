@@ -10,7 +10,6 @@ All comparison-layer numbers (PDG) stay outside.
 
 from __future__ import annotations
 
-import math
 from typing import Literal
 
 from pyhqiv.metric import gamma_hqiv

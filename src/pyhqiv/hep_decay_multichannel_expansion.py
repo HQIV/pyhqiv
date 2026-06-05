@@ -10,9 +10,7 @@ Enables large open channel counts for J/ψ, Υ etc in the discharged calculator.
 from __future__ import annotations
 
 import itertools
-import math
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Callable, Literal, Sequence
 
 import pyhqiv.hep_decay_readout as hdr
@@ -54,6 +52,12 @@ BOTTOM_BARYON_WEAK: tuple[tuple[tuple[str, ...], float], ...] = (
     (("lambda_c", "K_minus"), 0.45),
     (("p", "D0", "pi_minus"), 0.35),
 )
+
+OPEN_CHARM_MESONS = frozenset({"D_plus", "D0", "Ds_plus"})
+OPEN_BOTTOM_MESONS = frozenset({"B_plus", "B0", "Bs"})
+CHARMED_BARYONS = frozenset({"lambda_c", "sigma_c", "xi_c", "omega_c"})
+BOTTOM_BARYONS = frozenset({"lambda_b", "xi_b", "omega_b"})
+HIDDEN_QUARKONIA = frozenset({"Jpsi", "Upsilon"})
 
 @dataclass(frozen=True)
 class GeneratedMode:

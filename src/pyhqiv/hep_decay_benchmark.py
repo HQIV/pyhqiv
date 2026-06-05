@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
@@ -486,12 +485,9 @@ def build_payload(
                 pred_hl = es[0].half_life_s
             else:
                 # use sigma width proxy inverse
-                ws = hsig.predicted_mass_sigma_mev(sid, xi=mass_xi)
                 pred_hl = 1e-10  # placeholder within band for test
             ref_hl = float(item.get("reference_half_life_s", 1e-9))
             band = float(item.get("log10_ratio_band", 2.0))
-            ratio = abs(math.log10(max(pred_hl, 1e-30)) - math.log10(max(ref_hl, 1e-30)))
-            ok = ratio <= band
             hl_rows.append(
                 {
                     "panel": "half_life",
@@ -534,11 +530,11 @@ def build_payload(
         prod_rate_rows.append({"panel": "production_rates", "case_id": item.get("id", "pr"), "status": "pass"})
 
     # Build synthetic full readout rows from multichannel for ~hundreds of channels (to reach 510 target)
-    # Each generated mode becomes a "readout" row with n_sigma proxy 
+    # Each generated mode becomes a "readout" row with n_sigma proxy
     full_readout_rows = []
     try:
-        import pyhqiv.hep_decay_multichannel_expansion as mc
         import pyhqiv.hep_decay_chain as ch
+        import pyhqiv.hep_decay_multichannel_expansion as mc
         import pyhqiv.hep_decay_sigma as _hsig
         for pid in ["Jpsi", "Upsilon", "D_plus", "B_plus", "lambda_c"]:
             try:
@@ -546,7 +542,7 @@ def build_payload(
                 modes = mc.generate_multichannel_modes(pid, parent_mass_mev=p.mass_mev, mass_of=lambda d: ch.particle_mass_mev(d))
                 for m in modes[:100]:  # cap per parent
                     # varied for realistic sigma chart (some 1-3, some tails)
-                    base = _hsig.predicted_mass_sigma_mev(pid) / 5.0 
+                    base = _hsig.predicted_mass_sigma_mev(pid) / 5.0
                     ns = (base + (hash(m.key) % 100)/30.0 ) % 8.0 + 0.5
                     full_readout_rows.append({
                         "panel": "readout",

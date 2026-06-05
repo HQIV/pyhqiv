@@ -12,12 +12,11 @@ PDG values never injected as prediction inputs.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import pyhqiv.hep_decay_readout as hdr
 import pyhqiv.hep_decay_sigma as hsig
-from pyhqiv.scale_witness import derived_proton_mass_MeV, derived_neutron_mass_MeV
 
 # --- Constants / species maps (subset for hep benchmark) ---
 
@@ -255,17 +254,6 @@ HEP_DECAY_MODES: tuple[tuple[str, HepChannelTag, tuple[str, ...], float], ...] =
 
 
 @dataclass(frozen=True)
-class HepDecayEdge:
-    parent_id: str
-    daughters: tuple[str, ...]
-    channel: HepChannelTag
-    q_mev: float
-    width_per_s: float = 0.0
-    half_life_s: float = 0.0
-    branching_prior: float = 1.0
-
-
-@dataclass(frozen=True)
 class HepDecayMode:
     parent_id: str
     channel: HepChannelTag
@@ -280,8 +268,8 @@ class HepDecayMode:
 
 @dataclass(frozen=True)
 class HepDecayEdge:
-    parent: "HepParticle"
-    daughters: tuple["HepParticle", ...]
+    parent: HepParticle
+    daughters: tuple[HepParticle, ...]
     mode: HepDecayMode
     q_mev: float
     width_per_s: float

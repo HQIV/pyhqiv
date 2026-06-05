@@ -257,7 +257,7 @@ def production_rate_table(
 
 
 def build_production_rates_for_kinematics(
-    kin: "hep.CollisionKinematics",
+    kin: hep.CollisionKinematics,
     *,
     species_ids: list[str] | None = None,
     mass_xi: float | None = None,
