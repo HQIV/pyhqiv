@@ -5,7 +5,7 @@ import pytest
 
 pytest.importorskip(
     "pyhqiv.cosmology",
-    reason="cosmology not in current core rebuild (legacy; see bak/ and docs/legacy_api_inventory.md)",
+    reason="cosmology legacy (in bak/); see docs/legacy_api_inventory.md",
 )
 
 from pyhqiv.cosmology import HQIVUniverseEvolver

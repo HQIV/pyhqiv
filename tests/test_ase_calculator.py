@@ -5,7 +5,7 @@ import pytest
 
 pytest.importorskip(
     "pyhqiv.ase_interface",
-    reason="ase_interface not part of current core rebuild (legacy in bak/); see docs/legacy_api_inventory.md",
+    reason="ase_interface legacy (in bak/); see docs/legacy_api_inventory.md",
 )
 
 from pyhqiv.ase_interface import (

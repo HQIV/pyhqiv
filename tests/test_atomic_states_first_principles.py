@@ -11,7 +11,7 @@ import pytest
 
 pytest.importorskip(
     "pyhqiv.atomic_states_first_principles",
-    reason="atomic_states_first_principles not in current core rebuild (legacy, see bak/ and docs/legacy_api_inventory.md)",
+    reason="atomic_states_first_principles legacy (bak/); see docs/legacy_api_inventory.md",
 )
 
 from pyhqiv.atomic_states_first_principles import (
