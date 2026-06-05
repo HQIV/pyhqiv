@@ -8,6 +8,12 @@ scales (Θ), and nuclear binding energies.
 
 import numpy as np
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.constants",
+    reason="physical_values test requires legacy constants (bak/)",
+)
+
 from pyhqiv.constants import (
     AGE_APPARENT_GYR_PAPER,
     ALPHA_EM_INV,

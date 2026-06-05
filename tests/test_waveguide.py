@@ -1,6 +1,13 @@
 """Tests for HQIV waveguide: k_c², geometry rules, mode solver."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.constants",
+    reason="waveguide legacy test (constants in bak/)",
+)
+
 from pyhqiv.constants import C_SI
 from pyhqiv.waveguide import (
     distance_to_boundary_circle,

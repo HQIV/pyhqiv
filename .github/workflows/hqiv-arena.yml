@@ -32,6 +32,10 @@ jobs:
   # ============================================
   lean-certificate:
     runs-on: ubuntu-latest
+    # Opt into Node.js 24 for actions (checkout, upload-artifact, etc.) to silence
+    # Node 20 deprecation warnings. GitHub forces Node 24 default ~June 2026.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     # This job checks out the Lean side (trying to match branch for experimental work)
     steps:
       - name: Checkout pyhqiv (this repo)
@@ -117,6 +121,8 @@ jobs:
   alignment:
     needs: lean-certificate
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -183,6 +189,8 @@ jobs:
   python-tests:
     needs: alignment
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       fail-fast: false
       matrix:
@@ -227,6 +235,8 @@ jobs:
     needs: [lean-certificate, alignment, python-tests]
     if: always() && (needs.alignment.result == 'success' && needs.python-tests.result == 'success')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -311,6 +321,8 @@ jobs:
     needs: scoring
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -424,6 +436,8 @@ jobs:
     needs: [scoring]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - name: Note (real docgen lives in hqiv-lean repo)

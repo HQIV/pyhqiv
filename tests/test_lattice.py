@@ -2,6 +2,12 @@
 
 import numpy as np
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.lattice",
+    reason="lattice (and constants) legacy modules not in current core rebuild (bak/)",
+)
+
 from pyhqiv.constants import ALPHA, L_PLANCK_M, M_TRANS, T_PL_GEV
 from pyhqiv.lattice import (
     DiscreteNullLattice,

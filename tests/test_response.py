@@ -1,5 +1,12 @@
 """Tests for conductivity / response API."""
 
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.response",
+    reason="response module is legacy (in bak/)",
+)
+
 from pyhqiv.response import compute_conductivity, response_tensor_diagonal
 
 

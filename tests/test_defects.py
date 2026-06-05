@@ -1,6 +1,13 @@
 """Tests for defects: formation_energy, charged_defect_supercell."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.defects",
+    reason="defects not in current core rebuild (legacy in bak/)",
+)
+
 from pyhqiv.defects import charged_defect_supercell, formation_energy
 
 

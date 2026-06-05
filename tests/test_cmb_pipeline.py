@@ -1,6 +1,12 @@
 """Tests for CMB pipeline stub: status, run() without map generation."""
 
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.cmb_pipeline",
+    reason="cmb_pipeline not in current core rebuild (legacy in bak/)",
+)
+
 from pyhqiv.cmb_pipeline import HQIVCMBPipeline, cmb_pipeline_status
 
 

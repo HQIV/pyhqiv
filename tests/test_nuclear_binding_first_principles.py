@@ -6,6 +6,13 @@ Run with: pytest tests/test_nuclear_binding_first_principles.py -s -v
 to see each result and gap to experiment (not just pass/fail).
 """
 
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.nuclear_binding_first_principles",
+    reason="nuclear_binding_first_principles not in current core (legacy bak/)",
+)
+
 from pyhqiv.nuclear_binding_first_principles import (
     binding_energy_mev,
     run_first_principles_scan,

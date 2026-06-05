@@ -2,6 +2,12 @@
 
 import numpy as np
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.cosmology",
+    reason="cosmology not in current core rebuild (legacy; see bak/ and docs/legacy_api_inventory.md)",
+)
+
 from pyhqiv.cosmology import HQIVUniverseEvolver
 
 from pyhqiv import cosmology_full

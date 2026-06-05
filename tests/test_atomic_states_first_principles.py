@@ -8,6 +8,12 @@ Tests for first-principles atomic energy levels (atomic_states_first_principles)
 """
 
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.atomic_states_first_principles",
+    reason="atomic_states_first_principles not in current core rebuild (legacy, see bak/ and docs/legacy_api_inventory.md)",
+)
+
 from pyhqiv.atomic_states_first_principles import (
     electron_mass_and_wave_packet,
     find_atomic_energy_levels,

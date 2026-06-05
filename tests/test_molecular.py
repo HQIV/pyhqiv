@@ -1,5 +1,12 @@
 """Tests for molecular / PROtien helpers: theta_local, bond_length, damping."""
 
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.constants",
+    reason="molecular test depends on legacy constants/utils (bak/)",
+)
+
 from pyhqiv.constants import A_LOC_ANG, HBAR_C_EV_ANG
 from pyhqiv.utils import (
     bond_length_from_theta,
