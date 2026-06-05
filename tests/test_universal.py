@@ -1,6 +1,13 @@
 """Tests for HQIVUniversalSystem and binding calibration (PDG/NIST targets)."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.constants",
+    reason="universal test uses legacy constants + other modules (bak/)",
+)
+
 from pyhqiv.constants import M_NEUTRON_MEV, M_PROTON_MEV
 from pyhqiv.horizon_network import mean_field_mu
 from pyhqiv.hqiv_scalings import get_hqiv_nuclear_constants

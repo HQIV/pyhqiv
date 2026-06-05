@@ -1,6 +1,13 @@
 """Tests for HQIVPhaseLift and δθ′, ˙δθ′, lapse."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.constants",
+    reason="phase test legacy (constants bak/)",
+)
+
 from pyhqiv.constants import GAMMA, LAPSE_COMPRESSION_PAPER
 from pyhqiv.phase import (
     HQIVPhaseLift,

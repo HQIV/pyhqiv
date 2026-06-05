@@ -1,6 +1,13 @@
 """Tests for HQIVCrystal (PBC, bloch_sum) and band-gap / potential shift."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.crystal",
+    reason="crystal/atom not in current core rebuild (legacy in bak/)",
+)
+
 from pyhqiv.atom import HQIVAtom
 from pyhqiv.crystal import HQIVCrystal, high_symmetry_k_path, hqiv_potential_shift
 

@@ -5,6 +5,12 @@ import tempfile
 
 import numpy as np
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.export",
+    reason="export (and crystal) not in current core rebuild (legacy in bak/)",
+)
+
 from pyhqiv.crystal import hqiv_potential_shift
 from pyhqiv.export import (
     export_charge_density_ovito,

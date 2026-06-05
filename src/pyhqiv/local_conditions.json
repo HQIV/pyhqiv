@@ -5,7 +5,8 @@
     "earth_surface_g": "standard gravity (CODATA / BIPM conventional)",
     "earth_surface_vacuum_eps0": "CODATA 2018 vacuum permittivity",
     "earth_surface_vacuum_mu0": "CODATA 2018 vacuum permeability (exact in SI 2019 but value listed)",
-    "proton_mass_for_local_anchor_MeV": "PDG 2024; for test scale-witness comparison only (primary anchor remains Lean derivedProtonMass)"
+    "proton_mass_for_local_anchor_MeV": "PDG 2024; for test scale-witness comparison only (primary anchor remains Lean derivedProtonMass)",
+    "compton_MeV_to_J": "CODATA 2018 / 2019 SI eV-to-J conversion (1 MeV = 1e6 * elementary charge in J)"
   },
   "cmb_temperature_now_K": 2.7255,
   "cmb_temperature_uncertainty_K": 0.0006,
@@ -38,5 +39,6 @@
   "N_A": 6.02214076e23,
   "R_J_per_mol_K": 8.314462618,
   "k_B_J_per_K": 1.380649e-23,
-  "T_PL_K": 1.4168e32
+  "T_PL_K": 1.4168e32,
+  "compton_MeV_to_J": 1.602176634e-13
 }

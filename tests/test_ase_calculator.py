@@ -2,6 +2,12 @@
 
 import numpy as np
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.ase_interface",
+    reason="ase_interface legacy (in bak/); see docs/legacy_api_inventory.md",
+)
+
 from pyhqiv.ase_interface import (
     hqiv_energy_at_positions,
     hqiv_forces_analytic,

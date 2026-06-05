@@ -1,6 +1,13 @@
 """Tests for HQIVSystem and HQIVAtom."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip(
+    "pyhqiv.atom",
+    reason="atom/system legacy (bak/)",
+)
+
 from pyhqiv.atom import HQIVAtom
 from pyhqiv.system import HQIVSystem
 

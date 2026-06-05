@@ -2,6 +2,12 @@
 
 import numpy as np
 import pytest
+
+pytest.importorskip(
+    "pyhqiv.constants",
+    reason="perturbations test uses legacy constants (bak/)",
+)
+
 from pyhqiv.constants import ALPHA, C_SI, GAMMA
 from pyhqiv.perturbations import HQIVPerturbations, PerturbationMode
 from pyhqiv.system import HQIVSystem
